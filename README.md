@@ -1,15 +1,14 @@
 # AutoMautic
 Bash script taking care of Mautic installation.
 And then some more stuff...
+```
+       _         _        __  __             _   _        ____   ____    ___
+      / \  _   _| |_ ___ |  \/  | __ _ _   _| |_(_) ___  | ___| |___ \  / _ \
+     / _ \| | | | __/ _ \| |\/| |/ _` | | | | __| |/ __| |___ \   __) || | | |
+    / ___ \ |_| | || (_) | |  | | (_| | |_| | |_| | (__   ___) | / __/ | |_| |
+   /_/   \_\__,_|\__\___/|_|  |_|\__,_|\__,_|\__|_|\___| |____(_)_____(_)___/
 
-#       _         _        __  __             _   _        ____   ____    ___
-#      / \  _   _| |_ ___ |  \/  | __ _ _   _| |_(_) ___  | ___| |___ \  / _ \
-#     / _ \| | | | __/ _ \| |\/| |/ _` | | | | __| |/ __| |___ \   __) || | | |
-#    / ___ \ |_| | || (_) | |  | | (_| | |_| | |_| | (__   ___) | / __/ | |_| |
-#   /_/   \_\__,_|\__\___/|_|  |_|\__,_|\__,_|\__|_|\___| |____(_)_____(_)___/
-#
-#                Fully Automatic Mautic installer with SSL cert.
-#
+```
 # This Bash script is a one-command Mautic installer for people capable of launching a VPS
 # and running some basic commands in it but without the need for actual Linux Knowledge requirements.
 #
