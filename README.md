@@ -2,11 +2,11 @@
 Bash script taking care of Mautic installation.
 And then some more stuff...
 ```
-       _         _        __  __             _   _        ____   ____    ___
-      / \  _   _| |_ ___ |  \/  | __ _ _   _| |_(_) ___  | ___| |___ \  / _ \
-     / _ \| | | | __/ _ \| |\/| |/ _` | | | | __| |/ __| |___ \   __) || | | |
-    / ___ \ |_| | || (_) | |  | | (_| | |_| | |_| | (__   ___) | / __/ | |_| |
-   /_/   \_\__,_|\__\___/|_|  |_|\__,_|\__,_|\__|_|\___| |____(_)_____(_)___/
+       _         _        __  __             _   _       
+      / \  _   _| |_ ___ |  \/  | __ _ _   _| |_(_) ___
+     / _ \| | | | __/ _ \| |\/| |/ _` | | | | __| |/ __|
+    / ___ \ |_| | || (_) | |  | | (_| | |_| | |_| | (__ 
+   /_/   \_\__,_|\__\___/|_|  |_|\__,_|\__,_|\__|_|\___|
 
 ```
  This Bash script is a one-command Mautic installer for people capable of launching a VPS
@@ -36,7 +36,7 @@ And then some more stuff...
 
 
 
-     This script installs the following components:
+     The current version of this script installs the following components:
 
       - Apache 2.4 http web server
       - PHP 8.2 FPM with all the required packages
@@ -65,8 +65,7 @@ And then some more stuff...
        c) Automatically use a robust random password generator (e.g., openssl rand).
 
    In all cases:
-       - Store the generated password securely (e.g., in a temporary file or environment variable).
-       - Avoid using the root MySQL user directly for Mautic; create a dedicated user with limited privileges.
+- Avoid using the root MySQL user directly for Mautic; create a dedicated user with limited privileges.
 
  TODO: Investigate and handle kernel version-related reboot issue
    Problem: Script sometimes prompts for a reboot due to kernel version changes.
