@@ -365,9 +365,9 @@ update-alternatives --set php /usr/bin/php8.2
 
 
 ### Install Mautic.
-wget https://github.com/mautic/mautic/releases/download/5.2.1/5.2.1.zip
-unzip 5.2.1.zip
-rm 5.2.1.zip
+wget https://github.com/mautic/mautic/releases/download/5.2.2/5.2.2.zip
+unzip 5.2.2.zip
+rm 5.2.2.zip
 
 ### Set permissions.
 find /var/www/html -type d -exec chmod 755 -- {} +; find /var/www/html -type f -exec chmod 644 -- {} +; chown -R www-data:www-data /var/www/html
