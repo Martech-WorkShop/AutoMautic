@@ -1,0 +1,435 @@
+#!/bin/bash
+
+#       _         _        __  __             _   _
+#      / \  _   _| |_ ___ |  \/  | __ _ _   _| |_(_) ___
+#     / _ \| | | | __/ _ \| |\/| |/ _` | | | | __| |/ __|
+#    / ___ \ |_| | || (_) | |  | | (_| | |_| | |_| | (__
+#   /_/   \_\__,_|\__\___/|_|  |_|\__,_|\__,_|\__|_|\___|
+#
+#   Fully Automatic Mautic 5.2.2 installer with SSL cert.
+#
+# This Bash script is a one-command Mautic installer for people capable of launching a VPS
+# and running some basic commands in it but without the need for actual Linux Knowledge requirements.
+#
+# This particular file is intended for documentation.
+# There is an optimized verion of this dockerfile without comments.
+# The production script is usually stripped of most comments, todo list, etc. but in this version
+# for GitHub I keep (or add) very verbose comments and some extra sections.
+#
+# Intended uses:
+# - A simple way to test Mautic with one single copy and paste command.
+# - A live overview of Mautic requirements.
+# - A starting point for Mautic code exploration and tinkering.
+# - A way to learn about Bash Scripting.
+#
+# It is NOT meant as a production ready image.
+#
+# If you have any ideas how to make it clearer or simpler, please send me an email, submit a PR or an Issue.
+# Also consider checking these other repos:
+# KISSmauticDKR for a one-container, all-in-one Dockerfile, Docker Imagecontaining everything needed to run Mautic.
+#
+# While Ubuntu 24.04 is the only OS supported by this Script, you should be able to run it on other Debian-based distros.
+#
+# All the files for this dockerfile are on this GitHub repository:
+# https://github.com/Martech-WorkShop/AutoMautic
+#
+#
+#
+#     This script installs the following components:
+#
+#      - Apache 2.4 http web server
+#      - PHP 8.2 FPM with all the required packages
+#      - Maria DB 11.4 LTS
+#      - Mautic 5.2.2
+#      - Snap daemon
+#      - Certbot
+#
+#      It will also install an SSL cert and configure your Apache2 web server to use this certificate.
+
+
+
+###--------------------------------###
+###           To Do List           ###
+###--------------------------------###
+
+# TODO: Implement usage statistics
+#   Option 1: Use ssmtp to send install statistics.
+#   Option 2: Create an API endpoint and send data via curl.
+#
+# TODO:  Improve MySQL root password generation and handling
+#   Current method: MYSQL_PASSWORD=\$(cat /dev/urandom | tr -dc '...' | head -c32)
+#   Improvements:
+#       a) Allow user to type a password.
+#       b) Allow user to generate a random pasword.
+#       c) Automatically use a robust random password generator (e.g., openssl rand).
+#
+#   In all cases:
+#       - Store the generated password securely (e.g., in a temporary file or environment variable).
+#       - Avoid using the root MySQL user directly for Mautic; create a dedicated user with limited privileges.
+#
+# TODO: Investigate and handle kernel version-related reboot issue
+#   Problem: Script sometimes prompts for a reboot due to kernel version changes.
+#   Solution:  Determine the exact conditions causing the reboot prompt and implement appropriate handling (e.g., conditional reboot, restarting specific services instead of the entire system).
+#
+# ToDo: Add user imput for the email to be used for the Let's Encrypt notifications.
+#
+# ToDo: Send email containing the installation information.
+# Ask the user if he wants to be sent an email witht hat information.
+# Ask the user if he wants to be notified of new versions.
+# Ask the user if he wants to subscribe to the newsletter.
+
+# info: Switch to mpm prefork for package libapache2-mod-php8.2
+# Module mpm_event disabled.
+# Enabling module mpm_prefork.
+# info: Executing deferred 'a2enmod php8.2' for package libapache2-mod-php8.2
+
+# Processing triggers for libc-bin (2.39-0ubuntu8.3) ...
+# Scalar found where operator expected (Missing operator before "$nrconf"?) at (eval 12) line 237, near "'a'
+# $nrconf"
+# Error parsing /etc/needrestart/needrestart.conf: syntax error at (eval 12) line 237, near "'a'
+# $nrconf"
+# Execution of (eval 12) aborted due to compilation errors.
+
+# mysql: Deprecated program name. It will be removed in a future release, use '/usr/bin/mariadb' instead
+
+### Get files from toolBelt.
+
+# wget https://files.mktg.dev/pub/install-mautic/m5-tuto-basic.conf.txt -O /etc/apache2/sites-available/000-default.conf
+# todo: Change this to the proper AutoMautic directory #wget https://mauteam.org/wp-content/uploads/2019/10/000-default.txt -O /etc/apache2/sites-available/000-default.conf
+
+# Link does not exist: wget https://files.mktg.dev/pub/instal-mautic/mautic5-cron-jobs.txt -O /tmp/cron-jobs.txt
+# wget https://files.mktg.dev/pub/AutoMautic/m9cronjobs.txt -O /tmp/cron-jobs.txt
+# crontab /tmp/cron-jobs.txt
+# rm /tmp/cron-jobs.txt
+
+# echo "\n         You will need the following data to complete the Mautic configuration wizard:"
+# echo "\n          > > > > >  MAKE A COPY OF THE FOLLOWING DATA SOMEWHERE, DO IT NOW!  < < < < <"
+# echo "\n         Database driver: MySQL PDO"
+# echo "         Database Host: localhost"
+# echo "         Database port: 3306"
+# echo "         DB name: mautic"
+# echo "         Database Table Prefix: Leave empty"
+# echo "         Your MySQL database user is: root"
+# echo "         Your MySQL Root Password is: "$MYSQL_PASSWORD
+# echo "         Backup existing tables: No"
+
+# Fix garbage text dripping out of the find IP command.
+# Force https redirection or ask the user to ad it.
+
+
+###--------------------------------###
+###              Init              ###
+###--------------------------------###
+
+# MYSQL_PASSWORD=$(cat /dev/urandom | tr -dc '1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ#()@' | head -c32)
+#rm AutoMautic520.txt
+#mkdir -p /etc/needrestart/
+#echo "\$nrconf{restart} = 'a'" >> /etc/needrestart/needrestart.conf
+
+
+###  ---  Define Colors  ---
+
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+NC='\033[0m'
+
+
+###  ---  User Variables  ---
+
+MAUTIC_DOMAIN=""
+MYSQL_ROOT_PASSWORD=$(openssl rand -base64 32) # Generate secure password
+MYSQL_MAUTIC_USER="mautic_user"  # Dedicated user for Mautic
+MYSQL_MAUTIC_PASSWORD=$(openssl rand -base64 32) # Generate secure password
+CERTBOT_EMAIL=""
+
+
+###  ---  Stack Variables  ---
+
+MAUTIC_VERSION="5.2.2" # Will get latest version dynamically
+PHP_VERSION="8.2"
+MARIADB_VERSION="11.2"
+
+
+###  --- Requirement Variables  ---
+REQUIRED_DISK_SPACE=20 # in GB
+REQUIRED_RAM=2 # in GB
+REQUIRED_VCPUS=2
+
+
+###--------------------------------###
+###          Interactive           ###
+###--------------------------------###
+
+clear
+banner() {
+echo "\n\n\n ${NC}   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<-----o----->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+echo "\n\n\n"
+echo '''                _         _        __  __             _   _        '''
+echo '''               / \  _   _| |_ ___ |  \/  | __ _ _   _| |_(_) ___   '''
+echo '''              / _ \| | | | __/ _ \| |\/| |/ _` | | | | __| |/ __|  '''
+echo '''             / ___ \ |_| | || (_) | |  | | (_| | |_| | |_| | (__   '''
+echo '''            /_/   \_\__,_|\__\___/|_|  |_|\__,_|\__,_|\__|_|\___|  '''
+echo "\n"
+echo "                       Fully Automatic Mautic 5.2.2 installer with SSL cert."
+echo "\n\n"
+echo "   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<-----o----->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+}
+banner
+sleep 2
+echo "\n\n         Welcome to the AutoMautic installer."
+sleep 1
+echo "\n\n\n         If you encounter any problems, or have any questions, comments or issues,"
+echo "         drop by https://mauteam.org/ and tell us what's on your mind."
+sleep 2
+echo "\n\n\n         Let's start by updating all the existing packages in the system."
+echo "\n\n\n    <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<-----o----->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+echo "\n\n"
+sleep 1
+apt update && apt upgrade -y
+sleep 1
+clear
+banner
+echo "\n\n"
+echo "\n"
+echo "\n\n         Now let's check if all the requirements are met..."
+echo "\n\n"
+echo "\n\n\n    <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<-----o----->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+sleep 2
+echo "\n\n"
+echo "\n\n         Are you root?"
+[ `whoami` = root ] || exec su -c $0 root
+
+sleep 1
+echo "${GREEN}         Yes, you are root."
+sleep 1
+echo "\n\n${NC}         Is this Ubuntu 24.04?"
+sleep 1
+. /etc/lsb-release
+. /etc/os-release
+if [ "$DISTRIB_RELEASE" = "24.04" ]; then
+    echo "${GREEN}         Yes, this is Ubuntu" $VERSION"."
+else
+    echo "${RED}         Only Ubuntu 24.04, is officially supported. You are running" $DISTRIB_DESCRIPTION
+    echo "${RED}         You are not running a supported Linux Distro, chances are the install will just fail,"
+    echo "${RED}         please consider getting a VPS with Ubuntu 22.04 and starting the process again."
+fi
+sleep 1
+echo "\n\n${NC}         How much free disk space is available on your server?"
+FREE_DISK="$(df --output=avail -m / | tail -1)"
+GB_DISK=$((FREE_DISK/1000))
+sleep 1
+echo "         This installation requires a minimum of 20GB of free disk, 30GB or more recommended depending on usage."
+sleep 1
+echo "         Your server has "$GB_DISK "GB of disk drive available."
+if [ $GB_DISK -ge 20 ]; then
+    echo "${GREEN}         Yes, you have sufficient disk space available."
+else
+    echo "${RED}         Your avalable disk space is too scarce, consider getting a larger server."
+fi
+sleep 1
+echo "\n\n${NC}         How many threads or vCPUs does this server have?"
+VCPUS=$(nproc)
+sleep 1
+echo "         This Mautic installation requires a minimum of 2 vCPUs, 3 or more recommended, depending on usage."
+sleep 1
+echo "         Your server has "$VCPUS "CPU threads available."
+if [ $VCPUS -ge 2 ]; then
+    echo "${GREEN}         Yes, you have enough vCPU threads available."
+else
+    echo "${RED}         Your server does not have enough CPU threads available, consider getting a larger server."
+fi
+sleep 1
+echo "\n\n${NC}         How much RAM does this server have?"
+ALL_RAM=$(($(getconf _PHYS_PAGES) * $(getconf PAGE_SIZE) / (1024 * 1024000)))
+FREE_RAM=$(($(getconf _AVPHYS_PAGES) * $(getconf PAGE_SIZE) / (1024 * 1024000)))
+echo "         This Mautic installation requires a minimum of 2 GB of RAM, 4 or more recommended, depending on usage."
+sleep 1
+echo "         Your server has "$ALL_RAM"GB of RAM available."
+sleep 1
+echo "         Your server has "$FREE_RAM"GB of free RAM."
+if [ $ALL_RAM -ge 2 ]; then
+    echo "${GREEN}         Yes, you have enough RAM available."
+else
+    echo "${RED}         Your server does not have enough RAM available, consider getting a larger server."
+fi
+sleep 1
+echo "\n\n${NC}         Type here below the domain you have prepared for your new Mautic instance,"
+echo "         Use the format mautic.yourdomain.com, press ENTER when you are done."
+read -p "         https://" MAUTIC_DOMAIN
+echo
+echo "         Does your DNS A record point at the IP of this server?"
+DIG_DOMAIN="$(dig +short $MAUTIC_DOMAIN)"
+sleep 1
+echo "         The DNS A record for" $MAUTIC_DOMAIN "points to the IP:"  $DIG_DOMAIN
+sleep 1
+LOCAL_IP="$(curl -s http://whatismyip.akamai.com/)"
+# curl -s ipinfo.io | grep -Po 'ip[^0-9]*"\K[^"]*')"
+echo "         This server's IP is: "$LOCAL_IP
+sleep 1
+if [ "$DIG_DOMAIN" = "$LOCAL_IP" ]; then
+    echo "${GREEN}         Yes, the DNS A record for "$MAUTIC_DOMAIN "points to this server's IP."
+else
+    echo "${RED}         This server's IP does NOT coincide with the IP reported by the DNS A record for domain "$MAUTIC_DOMAIN
+    echo "${RED}         That mismatch, can prevent this script from creating and installing an SSL certificate."
+    echo "${RED}         Some domains require an https conection in order to work, in that case, you won't be able to have"
+    echo "${RED}         access to your Mautic install without a valid SSL certificate."
+    echo "${RED}         I strongly recommend you to setup your DNS first, before trying to install Mautic with the AutoMautic script."
+fi
+sleep 1
+echo "\n\n${NC}    <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<-----o----->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+echo "\n\n\n         If all the requirements are met, shown in ${GREEN}green${NC}, press ENTER to continue with the installation."
+echo "\n\n         If any of the requirements are not met, shown in ${RED}red${NC}, do not proceed with the setup,"
+echo "         press CTRL + C to abort the installation process, fix the issue, and start over again."
+echo "\n         A failed installation will likely prevent you from successfully running this script in the future."
+echo "\n\n    <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<-----o----->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+read -p " " NOTHING
+echo "\n\n         This script installs the following components:"
+echo "\n          - Apache 2.4 http web server"
+echo "          - PHP 8.2 FPM with all the required packages"
+echo "          - Maria DB 11.4 LTS"
+echo "          - Mautic 5.1.1"
+echo "          - Snap daemon"
+echo "          - Certbot"
+echo "\n         It will also install an SSL cert and configure your Apache2 web server to use this certificate."
+sleep 2
+echo "\n\n         Proceeding with the installation..."
+echo "\n\n"
+sleep 1
+
+
+###--------------------------------###
+###           Installation         ###
+###--------------------------------###
+
+### Install pre-requisites.
+
+apt install software-properties-common -y
+LC_ALL=C.UTF-8 add-apt-repository ppa:ondrej/php -y
+#add-apt-repository ppa:ondrej/php -y
+add-apt-repository ppa:ondrej/apache2 -y
+curl -LsS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup | sudo bash -s -- --mariadb-server-version=11.4
+apt update && apt upgrade -y
+
+
+### Install Packages.
+
+apt install snapd apache2 mariadb-server curl ntp openssl unzip php-bcmath php-curl php-igbinary php-intl php-mbstring php-xml php8.2 php8.2-imap php8.2-bcmath php8.2-bz2 php8.2-cli php8.2-common php8.2-curl php8.2-gd php8.2-gmp php8.2-igbinary php8.2-intl php8.2-mbstring php8.2-mysql php8.2-readline php8.2-phpdbg php8.2-xml php8.2-zip php8.2-soap php8.2-xmlrpc php8.2-tidy -y
+a2enmod php8.2 rewrite
+
+
+#info: Switch to mpm prefork for package libapache2-mod-php8.2
+#Module mpm_event disabled.
+#Enabling module mpm_prefork.
+#info: Executing deferred 'a2enmod php8.2' for package libapache2-mod-php8.2
+
+
+#Processing triggers for libc-bin (2.39-0ubuntu8.3) ...
+#Scalar found where operator expected (Missing operator before "$nrconf"?) at (eval 12) line 237, near "'a'
+#$nrconf"
+#Error parsing /etc/needrestart/needrestart.conf: syntax error at (eval 12) line 237, near "'a'
+#$nrconf"
+#Execution of (eval 12) aborted due to compilation errors.
+
+
+#mysql: Deprecated program name. It will be removed in a future release, use '/usr/bin/mariadb' instead
+#mysql: Deprecated program name. It will be removed in a future release, use '/usr/bin/mariadb' instead
+#mysql: Deprecated program name. It will be removed in a future release, use '/usr/bin/mariadb' instead
+
+
+### Get files from toolBelt.
+
+wget https://files.mktg.dev/pub/install-mautic/m5-tuto-basic.conf.txt -O /etc/apache2/sites-available/000-default.conf
+#todo: Change this to the proper AutoMautic directory #wget https://mauteam.org/wp-content/uploads/2019/10/000-default.txt -O /etc/apache2/sites-available/000-default.conf
+# Link does not exist: wget https://files.mktg.dev/pub/instal-mautic/mautic5-cron-jobs.txt -O /tmp/cron-jobs.txt
+wget https://files.mktg.dev/pub/AutoMautic/m9cronjobs.txt -O /tmp/cron-jobs.txt
+crontab /tmp/cron-jobs.txt
+rm /tmp/cron-jobs.txt
+
+
+### Create database.
+MYSQL_PASSWORD="rootpassword"
+mysql -u root -prootpassword -e "CREATE DATABASE mautic DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci;"
+mysql -u root -prootpassword -e "GRANT ALL ON mautic.* TO 'root'@'localhost' IDENTIFIED BY 'rootpassword';"
+mysql -u root -prootpassword -e "FLUSH PRIVILEGES;"
+cd /var/www/html/
+
+
+### Configure php.ini.
+sed -i 's/memory_limit = 128M/memory_limit = 512M/' /etc/php/8.2/apache2/php.ini
+sed -i 's/post_max_size = 8M/post_max_size = 32M/' /etc/php/8.2/apache2/php.ini
+sed -i 's/upload_max_filesize = 2M/upload_max_filesize = 32M/' /etc/php/8.2/apache2/php.ini
+sed -i 's/max_execution_time = 30/max_execution_time = 60/' /etc/php/8.2/apache2/php.ini
+sed -i  's/;date.timezone =/date.timezone = UTC/' /etc/php/8.2/apache2/php.ini
+cp /etc/php/8.2/apache2/php.ini /etc/php/8.2/cli/php.ini
+update-alternatives --set php /usr/bin/php8.2
+
+
+### Install Mautic.
+wget https://github.com/mautic/mautic/releases/download/5.2.1/5.2.1.zip
+unzip 5.2.1.zip
+rm 5.2.1.zip
+
+### Set permissions.
+find /var/www/html -type d -exec chmod 755 -- {} +; find /var/www/html -type f -exec chmod 644 -- {} +; chown -R www-data:www-data /var/www/html
+
+### Install Certbot and SSL Cert.
+service apache2 restart
+echo
+snap install --classic certbot
+certbot --apache -d "$MAUTIC_DOMAIN" --non-interactive --agree-tos --email automautic@mktg.dev
+
+
+### Finalizing Installation
+service apache2 restart
+sleep 2
+echo "\n\n      Clearing the cache might take a minute or two, please be patient..."
+echo "\n\n"
+sudo -u www-data php /var/www/html/bin/console cache:clear
+wget https://mauteam.org/AutoMautic/bashrc.txt -O ~/.bashrc
+wget https://mauteam.org/AutoMautic/hi5.txt -O /usr/local/bin/hi5
+# rm -R /var/www/html/var/cache
+#find /var/www/html -type d -exec chmod 755 -- {} +; find /var/www/html -type f -exec chmod 644 -- {} +; chown -R www-data:www-data /var/www/html
+
+
+###--------------------------------###
+###          Interactive           ###
+###--------------------------------###
+
+bash hi5
+sleep 3
+clear
+banner
+echo "\n\n         Thank you for using the AutoMautic Installer, if you encountered any problems, have any questions,"
+echo "         comments or issues, drop by https://mauteam.org/autoMautic/ and tell us what's on your mind."
+sleep 2
+echo "\n         Your Mautic installation is now completed, however you will have need to restart your server / VPS before"
+echo "              you can proceed with the Mautic configuration wizard."
+sleep 2
+echo "         After rebooting the server, use your favorite web browser, and navigate to your Mautic subdomain to complete the setup:"
+echo "         https://"$MAUTIC_DOMAIN
+sleep 2
+echo "\n         You will need the following data to complete the Mautic configuration wizard:"
+echo "\n          > > > > >  MAKE A COPY OF THE FOLLOWING DATA SOMEWHERE, DO IT NOW!  < < < < <"
+echo "\n         Database driver: MySQL PDO"
+echo "         Database Host: localhost"
+echo "         Database port: 3306"
+echo "         DB name: mautic"
+echo "         Database Table Prefix: Leave empty"
+echo "         Your MySQL database user is: root"
+echo "         Your MySQL Root Password is: "$MYSQL_PASSWORD
+echo "         Backup existing tables: No"
+sleep 2
+echo "\n         If you need help with the installation wizard, the steps to complete the Mautic setup are explained here:"
+echo "         https://mauteam.org/mautic/mautic-admins/mautic-installation-the-configuration-wizard/"
+echo "\n\n    <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<-----o----->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+echo "\n\n\n         We now have to reboot this server, after the reboot, you can start configuring your new Mautic instance."
+echo "\n         When rebooting, your SSH connection will be closed (disconnected), your VPS will take some time to restart,"
+echo "         wait a few minutes and you will be able to SSH into your server and log in to Mautic again."
+echo "\n\n\n         Press CTRL + C if you do not wish to reboot the server now, but be aware a reboot is required."
+echo "\n         Press ENTER when you are ready to reboot the server."
+echo "\n\n         Enjoy!"
+echo "\n    <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<-----o----->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+echo
+echo
+read -p " " NOTHING
+reboot
