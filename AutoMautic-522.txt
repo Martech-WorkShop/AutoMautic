@@ -47,11 +47,12 @@
 #      It will also install an SSL cert and configure your Apache2 web server to use this certificate.
 
 
-
 ###--------------------------------###
 ###           To Do List           ###
 ###--------------------------------###
 
+# TODO: Parametrice all the entries of the Mautic version.
+#
 # TODO: Implement usage statistics
 #   Option 1: Use ssmtp to send install statistics.
 #   Option 2: Create an API endpoint and send data via curl.
@@ -287,7 +288,7 @@ echo "\n\n         This script installs the following components:"
 echo "\n          - Apache 2.4 http web server"
 echo "          - PHP 8.2 FPM with all the required packages"
 echo "          - Maria DB 11.4 LTS"
-echo "          - Mautic 5.1.1"
+echo "          - Mautic 5.2.2"
 echo "          - Snap daemon"
 echo "          - Certbot"
 echo "\n         It will also install an SSL cert and configure your Apache2 web server to use this certificate."
