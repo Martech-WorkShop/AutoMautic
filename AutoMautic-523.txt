@@ -2,7 +2,7 @@
 banner() {
 cat <<EOF
 
-   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<-----o----->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<-----o----->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 
 
@@ -12,16 +12,17 @@ cat <<EOF
              / ___ \ |_| | || (_) | |  | | (_| | |_| | |_| | (__
             /_/   \_\__,_|\__\___/|_|  |_|\__,_|\__,_|\__|_|\___|
 
-                       Fully Automatic Mautic $MAUTIC_VERSION installer with SSL cert.
+            Fully Automatic Mautic $MAUTIC_VERSION installer with SSL cert.
 
 
 
-   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<-----o----->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<-----o----->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
 EOF
 }
 
 # This Bash script is a one-command Mautic installer for people capable of launching a VPS
-# and running some basic commands in it but without the need for actual Linux Knowledge requirements.
+# and running some basic commands in it, but without the need for actual Linux Knowledge requirements.
 #
 # Intended uses:
 # - A simple way to test Mautic with one single copy and paste command.
@@ -35,27 +36,12 @@ EOF
 # Also consider checking these other repos:
 # KISSmauticDKR for a one-container, all-in-one Dockerfile, Docker Imagecontaining everything needed to run Mautic.
 #
-# While Ubuntu 24.04 is the only OS supported by this Script, you should be able to run it on other Debian-based distros.
+# Debian 12 is the only OS supported by this Script.
 #
-# All the files for this dockerfile are on this GitHub repository:
+# All the files for this script are on this GitHub repository:
 # https://github.com/Martech-WorkShop/AutoMautic
 #
-#
-#
-#     This version of the script installs the following components:
-#
-#      - Apache 2.4 http web server
-#      - PHP $PHP_VERSION FPM with all the required packages
-#      - Maria DB $MARIADB_VERSION LTS
-#      - Mautic $MAUTIC_VERSION
-#      - Snap daemon
-#      - Certbot
-#
-#      It will also install an SSL cert and configure your Apache2 web server to use this certificate.
 
-# ---------------------------------------------------------------------
-#                                 To Do List
-# ---------------------------------------------------------------------
 
 # ---------------------------------------------------------------------
 #                                  Variables
@@ -96,6 +82,7 @@ NC='\033[0m'
 MAUTIC_FORM_URL="https://your-mautic-domain.com/form/submit?formId=YOUR_FORM_ID"
 LOG_FILE="/var/log/automautic_install.log"
 
+
 # ---------------------------------------------------------------------
 #                                 Interactive
 # ---------------------------------------------------------------------
@@ -107,6 +94,14 @@ echo "\n\n         Welcome to the AutoMautic installer."
 sleep 1
 echo "\n\n\n         If you encounter any problems, or have any questions, comments or issues,"
 echo "         drop by https://mauteam.org/ and tell us what's on your mind."
+echo "\n\n     This version of the script installs the following components:"
+echo "\n      - Apache 2.4 http web server"
+echo "      - PHP $PHP_VERSION FPM with all the required packages"
+echo "      - Maria DB $MARIADB_VERSION LTS"
+echo "      - Mautic $MAUTIC_VERSION"
+echo "      - Snap daemon"
+echo "      - Certbot"
+echo "\n      It will also install an SSL cert and configure your Apache2 web server to use this certificate."
 sleep 2
 echo "\n\n\n         Let's start by updating all the existing packages in the system."
 echo "\n\n\n    <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<-----o----->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
@@ -318,6 +313,7 @@ apt update && apt upgrade -y
 apt install snapd apache2 mariadb-server curl ntp openssl unzip php-bcmath php-curl php-igbinary php-intl php-mbstring php-xml php"$PHP_VERSION" php"$PHP_VERSION"-imap php"$PHP_VERSION"-bcmath php"$PHP_VERSION"-bz2 php"$PHP_VERSION"-cli php"$PHP_VERSION"-common php"$PHP_VERSION"-curl php"$PHP_VERSION"-gd php"$PHP_VERSION"-gmp php"$PHP_VERSION"-igbinary php"$PHP_VERSION"-intl php"$PHP_VERSION"-mbstring php"$PHP_VERSION"-mysql php"$PHP_VERSION"-readline php"$PHP_VERSION"-phpdbg php"$PHP_VERSION"-xml php"$PHP_VERSION"-zip php"$PHP_VERSION"-soap php"$PHP_VERSION"-xmlrpc php"$PHP_VERSION"-tidy -y
 a2enmod php"$PHP_VERSION" rewrite
 
+
 # ---------------------------------------------------------------------
 #                                  Functions
 # ---------------------------------------------------------------------
@@ -393,8 +389,9 @@ send_installation_data() {
 
   # Send the data to the Mautic form using curl.
   curl -sSL -X POST -d "$data" "$MAUTIC_FORM_URL"
-
 }
+
+
 # ---------------------------------------------------------------------
 #                                 Interactive
 # ---------------------------------------------------------------------
