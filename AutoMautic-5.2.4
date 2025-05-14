@@ -18,11 +18,33 @@ banner() {
 
 EOF
 }
+
+# This Bash script is a one-command Mautic installer for people capable of launching a VPS
+# and running some basic commands in it, but without the need for actual Linux Knowledge requirements.
+#
+# Intended uses:
+# - A simple way to test Mautic with one single copy and paste command.
+# - A live overview of Mautic requirements.
+# - A starting point for Mautic code exploration and tinkering.
+# - A way to learn about Bash Scripting.
+#
+# It is NOT meant as a production ready image.
+#
+# If you have any ideas how to make it clearer or simpler, please send me an email, submit a PR or an Issue.
+# Also consider checking these other repos:
+# KISSmauticDKR for a one-container, all-in-one Dockerfile, Docker Imagecontaining everything needed to run Maut
+#
+# Debian 12 is the only OS supported by this Script.
+#
+# All the files for this script are on this GitHub repository:
+# https://github.com/Martech-WorkShop/AutoMautic
+
+
 # ---------------------------------------------------------------------
 #                               Variables
 # ---------------------------------------------------------------------
 
-MAUTIC_VERSION="5.2.3"
+MAUTIC_VERSION="5.2.4"
 PHP_VERSION="8.3"
 MARIADB_VERSION="11.4"
 MAUTIC_DOMAIN=""
@@ -32,9 +54,9 @@ MYSQL_MAUTIC_PASSWORD=$(openssl rand -base64 32)
 MARIADB_DATABASE_NAME="mautic"
 CERTBOT_EMAIL=""
 
-REQUIRED_DISK_SPACE=20
+REQUIRED_DISK_SPACE=16
 REQUIRED_VCPUS=2
-REQUIRED_RAM=2
+REQUIRED_RAM=3
 
 DOWNLOAD_URL_APACHE_VHOST="https://raw.githubusercontent.com/Martech-WorkShop/toolBelt/Prod/Mautic/conf/apache/000-default.conf"
 DOWNLOAD_URL_CRON_JOBS="https://raw.githubusercontent.com/Martech-WorkShop/toolBelt/Prod/Mautic/conf/cron/cronjobs"
@@ -55,12 +77,10 @@ LOG_FILE="$HOME/AutoMautic_install.log"
 
 clear
 banner
-sleep 1
 echo -e "\n\n         Welcome to the AutoMautic installer."
 sleep 1
 echo -e "\n\n\n         If you encounter any problems, or have any questions or comments,"
 echo -e "         drop by ${MAGENTA}https://mauteam.org/ ${NC}and tell us what's on your mind."
-sleep 4
 echo -e "\n\n         This version of the script installs the following components:"
 echo -e "\n          - Apache 2.4 http web server"
 echo -e "          - PHP $PHP_VERSION FPM with all the required packages"
@@ -69,15 +89,16 @@ echo -e "          - Mautic $MAUTIC_VERSION"
 echo -e "          - Snap daemon"
 echo -e "          - Certbot"
 echo -e "\n       It will also install an SSL cert and configure your Apache2 web server to use this certificate."
-sleep 2
+
 echo -e "\n\n\n       Let's start by updating all the existing packages in the system."
+echo -e "\n\n                  Press any key to start updating the system."
 echo -e "\n\n\n  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<-----o----->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
 echo -e "\n\n"
-sleep 1
+
 export DEBIAN_FRONTEND=noninteractive
 apt update && apt upgrade -y -o "Dpkg::Options=--force-confnew"
 apt install lsb-release dnsutils -y -o "Dpkg::Options=--force-confnew"
-sleep 1
+
 clear
 banner
 echo -e "\n\n         Now let's check if all the requirements are met..."
@@ -101,28 +122,28 @@ sleep 2
 echo -e "\n\n${NC}         How much free disk space is available on your server?"
 FREE_DISK="$(df --output=avail -m / | tail -1)"
 GB_DISK=$((FREE_DISK / 1000))
-sleep 2
+sleep 1
 echo -e "         This installation requires a minimum of ${REQUIRED_DISK_SPACE}GB of free disk, 30GB or more recommended."
 if [ "$GB_DISK" -ge "$REQUIRED_DISK_SPACE" ]; then
     echo -e "${GREEN}         Your server has $GB_DISK GB of disk drive available ✔ ${NC}"
 else
     echo -e "${RED}         Your server has $GB_DISK GB of disk drive available ❌${NC}"
 fi
-sleep 2
+sleep 1
 echo -e "\n\n${NC}         How many threads or vCPUs does this server have?"
 VCPUS="$(nproc)"
-sleep 2
+sleep 1
 echo -e "         This Mautic installation requires a minimum of ${REQUIRED_VCPUS} vCPUs, 3 or more recommended."
 if [ "$VCPUS" -ge "$REQUIRED_VCPUS" ]; then
     echo -e "${GREEN}         Your server has $VCPUS CPU threads available ✔ ${NC}"
 else
     echo -e "${RED}         Your server has $VCPUS CPU threads available ❌${NC}"
 fi
-sleep 2
+sleep 1
 echo -e "\n\n${NC}         How much RAM does this server have?"
 ALL_RAM=$(($(getconf _PHYS_PAGES) * $(getconf PAGE_SIZE) / (1024 * 1024 * 1000)))
 FREE_RAM=$(($(getconf _AVPHYS_PAGES) * $(getconf PAGE_SIZE) / (1024 * 1024 * 1000)))
-sleep 2
+sleep 1
 echo -e "         This Mautic installation requires a minimum of ${REQUIRED_RAM} GB of RAM, 4 or more recommended."
 if [ "$ALL_RAM" -ge "$REQUIRED_RAM" ]; then
     echo -e "${GREEN}         Your server has $ALL_RAM GB of RAM available ✔ ${NC}"
@@ -131,28 +152,75 @@ else
     echo -e "${RED}         Your server has $ALL_RAM GB of RAM available ❌${NC}"
     echo -e "${RED}         Your server has $FREE_RAM GB of free RAM ❌${NC}"
 fi
-sleep 2
-echo -e "\n\n${NC}         Type here below the domain you have prepared for your new Mautic instance,"
-echo -e "         Use the format mautic.yourdomain.com, press ENTER when you are done."
-read -p "         https://" MAUTIC_DOMAIN
+sleep 1
+echo -e "\n\n${NC}         Select one of the following options: "
+echo -e "         1) I want you to install an SSL certificate for me. (A DNS entry for your mautic domain is required)"
+echo -e "         2) I want to install on my domain but without an SSL certificate. (For example if you are resolving SSL on a proxy)"
+echo -e "         3) No certificate and no domain, I want to test this script on my PC (we will be using localhost:38383)"
+read -p "         Press 1, 2 or 3 to make your selection: " DOMAIN_SSL_CHOICE
 echo
-echo -e "         Does your DNS A record point at the IP of this server?"
-DIG_DOMAIN="$(dig +short "$MAUTIC_DOMAIN")"
-sleep 2
-echo -e "         The DNS A record for $MAUTIC_DOMAIN points to the IP: $DIG_DOMAIN"
-sleep 2
-LOCAL_IP="$(curl -s http://whatismyip.akamai.com/)"
-echo -e "         This server's IP is: $LOCAL_IP"
-sleep 2
-if [ -z "$DIG_DOMAIN" ]; then
-    echo -e "${RED}         WARNING: No DNS A record found for $MAUTIC_DOMAIN. SSL installation may fail ❌${NC}"
-elif [ "$DIG_DOMAIN" != "$LOCAL_IP" ]; then
-    echo -e "${RED}         WARNING: The DNS A record for $MAUTIC_DOMAIN points to $DIG_DOMAIN, but this server's IP is $LOCAL_IP ❌${NC}"
-    echo -e "${RED}         SSL installation may fail due to DNS mismatch${NC}"
-else
-    echo -e "${GREEN}         Yes, the DNS A record for $MAUTIC_DOMAIN points to this server's IP ✔${NC}"
-fi
-sleep 2
+
+# Initialize a variable to track if SSL should be installed
+INSTALL_SSL=false
+
+case "$DOMAIN_SSL_CHOICE" in
+    1)
+        echo -e "${NC}         Type here below the domain you have prepared for your new Mautic instance,"
+        echo -e "         Use the format mautic.yourdomain.com, press ENTER when you are done."
+        read -p "         https://" MAUTIC_DOMAIN
+        echo
+        echo -e "         Does your DNS A record point at the IP of this server?"
+        DIG_DOMAIN="$(dig +short "$MAUTIC_DOMAIN")"
+        sleep 2
+        echo -e "         The DNS A record for $MAUTIC_DOMAIN points to the IP: $DIG_DOMAIN"
+        sleep 2
+        LOCAL_IP="$(curl -s http://whatismyip.akamai.com/)"
+        echo -e "         This server's IP is: $LOCAL_IP"
+        sleep 2
+        if [ -z "$MAUTIC_DOMAIN" ]; then
+            echo -e "${RED}         Domain cannot be empty for SSL installation. Exiting. ❌${NC}"
+            exit 1
+        elif [ -z "$DIG_DOMAIN" ]; then
+            echo -e "${RED}         WARNING: No DNS A record found for $MAUTIC_DOMAIN. SSL installation may fail ❌${NC}"
+        elif [ "$DIG_DOMAIN" != "$LOCAL_IP" ]; then
+            echo -e "${RED}         WARNING: The DNS A record for $MAUTIC_DOMAIN points to $DIG_DOMAIN, but this server's IP is $LOCAL_IP ❌${NC}"
+            echo -e "${RED}         SSL installation may fail due to DNS mismatch${NC}"
+        else
+            echo -e "${GREEN}         Yes, the DNS A record for $MAUTIC_DOMAIN points to this server's IP ✔${NC}"
+            INSTALL_SSL=true
+        fi
+        sleep 2
+        ;;
+    2)
+        echo -e "${NC}         Type here below the domain you have prepared for your new Mautic instance,"
+        echo -e "         Use the format mautic.yourdomain.com, press ENTER when you are done."
+        read -p "         https://" MAUTIC_DOMAIN
+        echo
+        if [ -z "$MAUTIC_DOMAIN" ]; then
+            echo -e "${RED}         Domain cannot be empty. Exiting. ❌${NC}"
+            exit 1
+        fi
+        echo -e "${YELLOW}         Proceeding without SSL certificate for $MAUTIC_DOMAIN.${NC}"
+        # Optionally, still perform a DNS check for information, but don't make it critical for SSL
+        DIG_DOMAIN="$(dig +short "$MAUTIC_DOMAIN")"
+        LOCAL_IP="$(curl -s http://whatismyip.akamai.com/)"
+        if [ -n "$DIG_DOMAIN" ] && [ "$DIG_DOMAIN" != "$LOCAL_IP" ]; then
+            echo -e "${YELLOW}         Note: DNS A record for $MAUTIC_DOMAIN points to $DIG_DOMAIN, server IP is $LOCAL_IP.${NC}"
+        elif [ -z "$DIG_DOMAIN" ]; then
+            echo -e "${YELLOW}         Note: No DNS A record found for $MAUTIC_DOMAIN.${NC}"
+        fi
+        sleep 2
+        ;;
+    3)
+        MAUTIC_DOMAIN="localhost:38383"
+        echo -e "${GREEN}         Using $MAUTIC_DOMAIN for local testing. No SSL certificate will be installed. ✔${NC}"
+        sleep 2
+        ;;
+    *)
+        echo -e "${RED}         Invalid selection. Please run the script again and choose 1, 2, or 3. Exiting. ❌${NC}"
+        exit 1
+        ;;
+esac
 
 echo -e "\n\n${NC}  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<-----o----->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
 echo -e "\n\n\n         If all the requirements are met, shown in ${GREEN}green ✔${NC}, press ENTER to continue with the installation."
@@ -166,11 +234,11 @@ echo -e "          - Mautic $MAUTIC_VERSION"
 echo -e "          - Snap daemon"
 echo -e "          - Certbot"
 echo -e "\n         It will also install an SSL cert and configure your Apache2 web server to use this certificate."
-echo -e "\n\n  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<-----o----->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+echo -e "\n\n                     Press any key to start the installation process."
+echo -e "\n\n\n  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<-----o----->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
 read -p " " NOTHING
 echo -e "\n\n         Proceeding with the installation..."
 echo -e "\n\n"
-sleep 2
 
 
 # ---------------------------------------------------------------------
@@ -235,7 +303,6 @@ update-alternatives --set php /usr/bin/php"$PHP_VERSION"
 clear
 banner
 echo -e "\n\n${NC}  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<-----o----->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
-
 echo -e "\n\n\n${NC}         Now, let's set up the MariaDB root password."
 echo -e "         You can either enter a custom password or let the script generate a strong one."
 read -p "         Press ENTER to generate a MariaDB root password, or type a custom password: " MYSQL_ROOT_PASSWORD
@@ -292,7 +359,11 @@ if [ "$AMAUTIC_OPT_IN" = "yes" ]; then
 else
     USER_CONSENT="no"
 fi
-eccho -e "\n\n Let's get you an SSL/TLS certificate for $
+if [ "$INSTALL_SSL" = true ]; then
+    echo -e "\n\n Let's get you an SSL/TLS certificate for $MAUTIC_DOMAIN"
+else
+    echo -e "\n\n Skipping SSL certificate installation as per your selection."
+fi
 
 echo -e "\n\n${NC}  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<-----o----->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
 
@@ -301,14 +372,21 @@ echo -e "\n\n${NC}  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<-----o----->>>>>>
 #                              Installation
 # ---------------------------------------------------------------------
 
-snap install --classic certbot || { echo -e "${RED}Failed to install Certbot ❌${NC}"; }
-if [ -n "$CERTBOT_EMAIL" ]; then
-    /snap/bin/certbot --apache -d "$MAUTIC_DOMAIN" --non-interactive --agree-tos --email "$CERTBOT_EMAIL" || { echo -e "${RED}Certbot (IF) SSL setup failed ❌${NC}"; }
+if [ "$INSTALL_SSL" = true ]; then
+    echo -e "\n\n${NC}         Installing SSL certificate with Certbot...${NC}"
+    snap install --classic certbot || { echo -e "${RED}Failed to install Certbot ❌${NC}"; }
+    if [ -n "$CERTBOT_EMAIL" ]; then
+        /snap/bin/certbot --apache -d "$MAUTIC_DOMAIN" --non-interactive --agree-tos --email "$CERTBOT_EMAIL" || { echo -e "${RED}Certbot SSL setup failed (with email) ❌${NC}"; }
+    else
+        /snap/bin/certbot --apache -d "$MAUTIC_DOMAIN" --non-interactive --agree-tos --register-unsafely-without-email || { echo -e "${RED}Certbot SSL setup failed (without email) ❌${NC}"; }
+    fi
+    if [ ! -f "/etc/letsencrypt/live/$MAUTIC_DOMAIN/fullchain.pem" ]; then
+        echo -e "${RED}SSL certificate not found after Certbot execution. Certbot likely failed. Please check logs. ❌${NC}"
+    else
+        echo -e "${GREEN}SSL certificate installed successfully for $MAUTIC_DOMAIN ✔${NC}"
+    fi
 else
-    /snap/bin/certbot --apache -d "$MAUTIC_DOMAIN" --non-interactive --agree-tos --register-unsafely-without-email || { echo -e "${RED}Certbot (ELSE) SSL setup failed ❌${NC}"; }
-fi
-if [ ! -f "/etc/letsencrypt/live/$MAUTIC_DOMAIN/fullchain.pem" ]; then
-    echo -e "${RED}SSL certificate not found. Certbot likely failed due to DNS issues ❌${NC}"
+    echo -e "\n\n${YELLOW}         Skipping Certbot installation and SSL setup.${NC}"
 fi
 
 find /var/www/html -type d -exec chmod 755 -- {} +; find /var/www/html -type f -exec chmod 644 -- {} +; chown -R www-data:www-data /var/www/html
@@ -339,7 +417,7 @@ echo -e "              you can proceed with the Mautic configuration wizard."
 sleep 2
 echo -e "         You can use your favorite web browser and navigate to your Mautic subdomain to complete the setup:"
 echo -e "         https://$MAUTIC_DOMAIN"
-sleep 2
+sleep 1
 echo -e "\n         You will need the following data to complete the Mautic configuration wizard:"
 echo -e "\n         Database driver: MySQL PDO"
 echo -e "         Database Host: localhost"
@@ -418,6 +496,7 @@ send_installation_data() {
     }
 
 submit_to_form 1
+}
 
 
 if [ "$USER_CONSENT" = "yes" ]; then
