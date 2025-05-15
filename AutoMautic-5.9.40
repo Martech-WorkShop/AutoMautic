@@ -158,8 +158,17 @@ echo -e "\n\n${NC}         Select one of the following options: "
 echo -e "         1) I want you to install an SSL certificate for me. (A DNS entry for your mautic domain is required)"
 echo -e "         2) I want to install on my domain but without an SSL certificate. (For example if you are resolving SSL on a proxy)"
 echo -e "         3) No certificate and no domain, I want to test this script on my PC (we will be using localhost:38383)"
-read -p "         Press 1, 2 or 3 to make your selection: " DOMAIN_SSL_CHOICE
-echo
+echo -n -e "         Press 1, 2 or 3 to make your selection: " # Modified prompt
+DOMAIN_SSL_CHOICE="" # Initialize variable
+while true; do
+    read -n1 -s DOMAIN_SSL_CHOICE # Read single char silently
+    if [[ "$DOMAIN_SSL_CHOICE" == "1" || "$DOMAIN_SSL_CHOICE" == "2" || "$DOMAIN_SSL_CHOICE" == "3" ]]; then
+        echo "$DOMAIN_SSL_CHOICE" # Echo the valid choice for user feedback
+        break                 # Exit loop on valid input
+    fi
+    # For any other key, the loop continues, waiting for 1, 2, or 3
+done
+echo # Ensure a newline after the input
 
 # Initialize a variable to track if SSL should be installed
 INSTALL_SSL=false
@@ -234,9 +243,8 @@ echo -e "          - Maria DB $MARIADB_VERSION LTS"
 echo -e "          - Mautic $MAUTIC_VERSION"
 echo -e "          - Snap daemon (optional)"
 echo -e "          - Certbot (optional)"
-echo -e "\n         I will give you the option to install an SSL cert and auto-configure your Apache2 web server to use this certificate."
 echo -e "\n                                  Press any key to start the Mautic installation process."
-echo -e "\n\n\n  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<-----o----->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+echo -e "\n\n  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<-----o----->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
 read -p " " NOTHING
 echo -e "\n\n         Proceeding with the installation..."
 echo -e "\n\n"
@@ -414,11 +422,10 @@ echo -e "\n\n         Thank you for using the AutoMautic Installer, if you encou
 echo -e "         comments or issues, drop by https://mauteam.org/autoMautic/ and tell us what's on your mind."
 sleep 2
 echo -e "\n         Your Mautic installation is now completed, however you will need to restart your server / VPS before"
-echo -e "              you can proceed with the Mautic configuration wizard."
-sleep 2
-echo -e "         You can use your favorite web browser and navigate to your Mautic subdomain to complete the setup:"
-echo -e "         https://$MAUTIC_DOMAIN"
-sleep 1
+echo -e "         you can now proceed with the Mautic configuration wizard."
+echo -e "         Use your web browser and navigate to your Mautic subdomain to complete the setup:"
+echo -e "\n                   ----- >>   https://$MAUTIC_DOMAIN   << -----"
+sleep 3
 echo -e "\n         You will need the following data to complete the Mautic configuration wizard:"
 echo -e "\n         Database driver: MySQL PDO"
 echo -e "         Database Host: localhost"
@@ -428,12 +435,6 @@ echo -e "         Database Table Prefix: Leave empty"
 echo -e "         Your MySQL database user is: $MYSQL_MAUTIC_USER"
 echo -e "         Your MySQL User Password is: $MYSQL_MAUTIC_PASSWORD"
 echo -e "         Backup existing tables: No"
-echo -e ""
-echo -e ""  # Two empty lines after "Backup existing tables"
-echo -e "  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<-----o----->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
-echo -e ""
-echo -e ""  # Two more empty lines before final output
-
 server_ip=$(curl -s http://whatismyip.akamai.com/)
 if [ "$SAVE_DETAILS_OPT_IN" = "yes" ]; then
     {
@@ -465,7 +466,11 @@ else
         echo ""
     } | tee /dev/tty
 fi
-
+echo -e ""
+echo -e ""
+echo -e "  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<-----o----->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+echo -e ""
+echo -e ""
 echo -e "\n         If you need help with the installation wizard, the steps to complete the Mautic setup are explained here:"
 echo -e "         https://mauteam.org/mautic/mautic-admins/mautic-installation-the-configuration-wizard/"
 
@@ -474,12 +479,12 @@ echo -e "         https://mauteam.org/mautic/mautic-admins/mautic-installation-t
 #                             Report
 # ---------------------------------------------------------------------
 
-send_installation_data() {
+report_installation_data() {
     local server_ip=$(curl -s http://whatismyip.akamai.com/)
     local base_data="mauticform[mautic_version]=$MAUTIC_VERSION&mauticform[installed_domain]=$MAUTIC_DOMAIN&mauticform[server_ip]=$server_ip&mauticform[user_consent]=$USER_CONSENT&mauticform[email]=$MARKETING_EMAIL"
 
-    # Function to submit to a specific form ID
-    submit_to_form() {
+    # Function to save report to a specific ID
+    save_report() {
         local form_id=$1
         local form_url="https://mautic.mauteam.org/form/submit?formId=$form_id"
         local data="$base_data&mauticform[formId]=$form_id"
@@ -489,23 +494,15 @@ send_installation_data() {
         echo "Form #$form_id Submission - $(date '+%Y-%m-%d %H:%M:%S')" >> "$LOG_FILE"
         echo "----------------------------------------" >> "$LOG_FILE"
         echo "Form #$form_id submission response: $response" >> "$LOG_FILE"
-        if [ "$http_status" -eq 200 ] || [ "$http_status" -eq 302 ]; then
-            echo -e "${GREEN}         Installation data sent to Form #$form_id (HTTP $http_status) ${NC}"
-        else
-            echo -e "${RED}         Failed to send installation data to Form #$form_id (HTTP $http_status) ${NC}"
-        fi
     }
 
-submit_to_form 1
+save_report 1
 }
-
-
 if [ "$USER_CONSENT" = "yes" ]; then
-    send_installation_data
-else
-    echo -e "${RED}         Installation data will NOT be sent ${NC}"
+    report_installation_data
 fi
 
+rm AutoMautic-5.9.40
 echo -e "\n\n  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<-----o----->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
 echo -e "\n\n\n         If you need help with the installation wizard, the steps to complete the Mautic setup are explained here:"
 echo -e "         https://mauteam.org/mautic/mautic-admins/mautic-installation-the-configuration-wizard/"
