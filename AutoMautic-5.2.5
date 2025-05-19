@@ -179,10 +179,11 @@ case "$DOMAIN_SSL_CHOICE" in
     1)
         echo -e "${NC}         Type here below the domain you have prepared for your new Mautic instance,"
         echo -e "         Use the format mautic.yourdomain.com, press ENTER when you are done."
-        echo -n -e "         ${NC}https://${NC}"
+        echo -n -e "         ${ORANGE}https://${NC}" # Prompt is now orange
         read MAUTIC_DOMAIN_INPUT
         MAUTIC_DOMAIN=$MAUTIC_DOMAIN_INPUT
-        echo -e "\033[A\r\033[K         ${NC}https://${ORANGE}${MAUTIC_DOMAIN}${NC}"
+        # Reprint prompt (orange) and user input (orange)
+        echo -e "\033[A\r\033[K         ${ORANGE}https://${ORANGE}${MAUTIC_DOMAIN}${NC}"
         echo
         echo -e "         Does your DNS A record point at the IP of this server?"
         DIG_DOMAIN="$(dig +short "$MAUTIC_DOMAIN")"
@@ -209,10 +210,11 @@ case "$DOMAIN_SSL_CHOICE" in
     2)
         echo -e "${NC}         Type here below the domain you have prepared for your new Mautic instance,"
         echo -e "         Use the format mautic.yourdomain.com, press ENTER when you are done."
-        echo -n -e "         ${NC}https://${NC}"
+        echo -n -e "         ${ORANGE}https://${NC}" # Prompt is now orange
         read MAUTIC_DOMAIN_INPUT
         MAUTIC_DOMAIN=$MAUTIC_DOMAIN_INPUT
-        echo -e "\033[A\r\033[K         ${NC}https://${ORANGE}${MAUTIC_DOMAIN}${NC}"
+        # Reprint prompt (orange) and user input (orange)
+        echo -e "\033[A\r\033[K         ${ORANGE}https://${ORANGE}${MAUTIC_DOMAIN}${NC}"
         echo
         if [ -z "$MAUTIC_DOMAIN" ]; then
             echo -e "${RED}         Domain cannot be empty. Exiting. ❌${NC}"
@@ -319,17 +321,19 @@ echo -e "\n\n${NC}  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<-----o----->>>>>>
 echo -e "\n\n\n${NC}         Now, let's set up the MariaDB root password."
 echo -e "         You can either enter a custom password or let the script generate a strong one."
         mariadb_prompt_text="Press ENTER to generate a MariaDB root password, or type a custom password: "
-        echo -n -e "         ${NC}${mariadb_prompt_text}${NC}"
+        echo -n -e "         ${ORANGE}${mariadb_prompt_text}${NC}" # Prompt is now orange
         read MYSQL_ROOT_PASSWORD_INPUT
         if [ -z "$MYSQL_ROOT_PASSWORD_INPUT" ]; then
             MYSQL_ROOT_PASSWORD=$(openssl rand -base64 32)
-            echo -e "\033[A\r\033[K         ${NC}${mariadb_prompt_text}${NC}"
+            # Reprint orange prompt (no "GENERATED" text)
+            echo -e "\033[A\r\033[K         ${ORANGE}${mariadb_prompt_text}${NC}"
             echo
             echo -e "         MariaDB root password: ${BLUE}$MYSQL_ROOT_PASSWORD${NC}"
             echo -e "         I will later offer you to save this password on disk."
         else
             MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD_INPUT
-            echo -e "\033[A\r\033[K         ${NC}${mariadb_prompt_text}${ORANGE}${MYSQL_ROOT_PASSWORD}${NC}"
+            # Reprint orange prompt and orange user input
+            echo -e "\033[A\r\033[K         ${ORANGE}${mariadb_prompt_text}${ORANGE}${MYSQL_ROOT_PASSWORD}${NC}"
             echo
             echo -e "         Using your custom MariaDB root password: ${ORANGE}$MYSQL_ROOT_PASSWORD${NC}"
         fi
