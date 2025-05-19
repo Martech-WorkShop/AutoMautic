@@ -230,7 +230,7 @@ case "$DOMAIN_SSL_CHOICE" in
         sleep 2
         ;;
     3)
-        MAUTIC_DOMAIN=""
+        MAUTIC_DOMAIN="localhost:38383"
         echo -e "${GREEN}         Using ${ORANGE}$MAUTIC_DOMAIN${GREEN} for local testing. No SSL certificate will be installed. ✔${NC}"
         sleep 2
         ;;
@@ -323,7 +323,7 @@ echo -e "         You can either enter a custom password or let the script gener
         read MYSQL_ROOT_PASSWORD_INPUT
         if [ -z "$MYSQL_ROOT_PASSWORD_INPUT" ]; then
             MYSQL_ROOT_PASSWORD=$(openssl rand -base64 32)
-            echo -e "\033[A\r\033[K         ${NC}${mariadb_prompt_text}${BLUE}GENERATED${NC}"
+            echo -e "\033[A\r\033[K         ${NC}${mariadb_prompt_text}${NC}"
             echo
             echo -e "         MariaDB root password: ${BLUE}$MYSQL_ROOT_PASSWORD${NC}"
             echo -e "         I will later offer you to save this password on disk."
