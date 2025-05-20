@@ -1,5 +1,5 @@
 #!/bin/bash
-# OK 9
+# OK 11
 banner() {
 cat <<EOF
 
@@ -37,8 +37,16 @@ EOF
 # https://github.com/Martech-WorkShop/AutoMautic
 
 
+#TODO:
+
+#<VirtualHost *:443>
+#    ServerName mautic.your-domain.com
+#   RemoteIPProxyProtocol On
+#    ServerAdmin your-email@your-domain.com
+
+
 #---------------------------------------------------------------------
-# Variables
+#                            Variables
 #---------------------------------------------------------------------
 
 MAUTIC_VERSION="5.2.5"
@@ -70,7 +78,7 @@ NC='\033[0m'              # No Color - Resets text color to default
 
 
 #---------------------------------------------------------------------
-# Interactive
+#                            Interactive
 #---------------------------------------------------------------------
 
 clear
@@ -236,7 +244,7 @@ echo -e "\n\n         If any requirements are not met, shown in ${RED}red ❌${N
 echo -e "         Installation might fail if requirements are not met, but you can continue by pressing ENTER."
 echo -e "\n\n         This script installs the following components:"
 echo -e "\n          - Apache 2.4 http web server"
-echo -e "          - PHP $PHP_VERSION FPM with all the required packages"
+echo -e "          - PHP $PHP_VERSION with all the required packages"
 echo -e "          - MariaDB Server"
 echo -e "          - Mautic $MAUTIC_VERSION"
 echo -e "          - Snap daemon (optional)"
@@ -249,7 +257,7 @@ echo -e "\n\n"
 
 
 #---------------------------------------------------------------------
-# Installation - Packages and Base Config
+#            Installation - Packages and Base Config
 #---------------------------------------------------------------------
 
 echo -e "${NC}         Installing packages, please wait...${NC}"
@@ -262,9 +270,11 @@ echo "deb [arch=amd64,arm64,ppc64el signed-by=/etc/apt/trusted.gpg.d/mariadb_rel
 
 apt update && apt upgrade -y -o "Dpkg::Options=--force-confnew"
 
-apt install cron snapd apache2 mariadb-server curl ntp openssl unzip php-bcmath php-curl php-igbinary php-intl php-mbstring php-xml php"$PHP_VERSION" php"$PHP_VERSION"-fpm php"$PHP_VERSION"-imap php"$PHP_VERSION"-bcmath php"$PHP_VERSION"-bz2 php"$PHP_VERSION"-cli php"$PHP_VERSION"-common php"$PHP_VERSION"-curl php"$PHP_VERSION"-gd php"$PHP_VERSION"-gmp php"$PHP_VERSION"-igbinary php"$PHP_VERSION"-intl php"$PHP_VERSION"-mbstring php"$PHP_VERSION"-mysql php"$PHP_VERSION"-readline php"$PHP_VERSION"-phpdbg php"$PHP_VERSION"-xml php"$PHP_VERSION"-zip php"$PHP_VERSION"-soap php"$PHP_VERSION"-xmlrpc php"$PHP_VERSION"-tidy -y -o "Dpkg::Options=--force-confnew" || { echo -e "         ${RED}Package installation failed ❌${NC}"; }
+apt install cron snapd apache2 mariadb-server curl ntp openssl unzip php-bcmath php-curl php-igbinary php-intl php-mbstring php-xml php"$PHP_VERSION" php"$PHP_VERSION"-imap php"$PHP_VERSION"-bcmath php"$PHP_VERSION"-bz2 php"$PHP_VERSION"-cli php"$PHP_VERSION"-common php"$PHP_VERSION"-curl php"$PHP_VERSION"-gd php"$PHP_VERSION"-gmp php"$PHP_VERSION"-igbinary php"$PHP_VERSION"-intl php"$PHP_VERSION"-mbstring php"$PHP_VERSION"-mysql php"$PHP_VERSION"-readline php"$PHP_VERSION"-phpdbg php"$PHP_VERSION"-xml php"$PHP_VERSION"-zip php"$PHP_VERSION"-soap php"$PHP_VERSION"-xmlrpc php"$PHP_VERSION"-tidy -y -o "Dpkg::Options=--force-confnew" || { echo -e "         ${RED}Package installation failed ❌${NC}"; }
 a2enmod php"$PHP_VERSION" rewrite
-
+a2dismod mpm_event >/dev/null 2>&1 || echo -e "         ${YELLOW}Note: mpm_event was not enabled or failed to disable (may be ok).${NC}"
+a2enmod mpm_prefork || { echo -e "         ${RED}CRITICAL: Failed to enable mpm_prefork. mod_php will not work correctly. ❌${NC}"; exit 1; }
+echo -e "${GREEN}         Apache mpm_prefork enabled. ✔${NC}"
 wget "$DOWNLOAD_URL_APACHE_VHOST" -O /etc/apache2/sites-available/000-default.conf || { echo -e "         ${RED}Failed to download Apache vhost config ❌${NC}"; }
 wget "$DOWNLOAD_URL_CRON_JOBS" -O /tmp/cron-jobs.txt || { echo -e "         ${RED}Failed to download cron jobs ❌${NC}"; }
 crontab /tmp/cron-jobs.txt
@@ -288,7 +298,7 @@ update-alternatives --set php /usr/bin/php"$PHP_VERSION"
 
 
 #---------------------------------------------------------------------
-# Interactive - Mautic DB User Password & Database Setup
+#      Interactive - Mautic DB User Password & Database Setup
 #---------------------------------------------------------------------
 
 clear
@@ -340,7 +350,7 @@ fi
 
 
 #---------------------------------------------------------------------
-# Interactive - Opt-ins
+#                     Interactive - Opt-ins
 #---------------------------------------------------------------------
 
 echo -e "\n\n${NC}         Receive notifications about certificate renewals? (y/n, press ENTER for yes)"
@@ -435,16 +445,16 @@ fi
 if [ "$AMAUTIC_OPT_IN" = "yes" ]; then USER_CONSENT="yes"; else USER_CONSENT="no"; fi
 
 if [ "$INSTALL_SSL" = true ]; then
-    echo -e "\n\n Let's get you an SSL/TLS certificate for ${ORANGE}$MAUTIC_DOMAIN${NC}"
+    echo -e "\n\n           Let's get you an SSL/TLS certificate for ${ORANGE}$MAUTIC_DOMAIN${NC}"
 else
-    echo -e "\n\n ${YELLOW}Skipping SSL certificate installation as per your selection.${NC}"
+    echo -e "\n\n           ${YELLOW}Skipping SSL certificate installation as per your selection.${NC}"
 fi
 
 echo -e "\n\n${NC}  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<-----o----->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
 
 
 #---------------------------------------------------------------------
-# Installation - SSL and Final Steps
+#                Installation - SSL and Final Steps
 #---------------------------------------------------------------------
 
 if [ "$INSTALL_SSL" = true ]; then
@@ -481,7 +491,7 @@ sleep 5
 
 
 #---------------------------------------------------------------------
-# Interactive - Completion & Info
+#                 Interactive - Completion & Info
 #---------------------------------------------------------------------
 
 clear
@@ -552,7 +562,7 @@ echo -e "         ${MAGENTA}https://mauteam.org/mautic/mautic-admins/mautic-inst
 
 
 #---------------------------------------------------------------------
-# Report
+#                             Save report
 #---------------------------------------------------------------------
 
 report_installation_data() {
@@ -565,15 +575,6 @@ report_installation_data() {
         local data="$base_data&mauticform[formId]=$form_id"
         local response=$(curl -sSL -X POST -d "$data" "$form_url" -w "\nHTTP_STATUS:%{http_code}" --connect-timeout 10 --retry 3 --retry-delay 5)
         local http_status=$(echo "$response" | grep -oP 'HTTP_STATUS:\K\d+')
-        echo "----------------------------------------" >> "$LOG_FILE"
-        echo "Form #$form_id Submission - $(date '+%Y-%m-%d %H:%M:%S')" >> "$LOG_FILE"
-        echo "----------------------------------------" >> "$LOG_FILE"
-        echo "Form #$form_id submission response: $response" >> "$LOG_FILE"
-        if [[ "$http_status" -ge 200 && "$http_status" -lt 300 ]]; then
-            echo "Form #$form_id data sent successfully." >> "$LOG_FILE"
-        else
-            echo "Warning: Form #$form_id submission may have failed. HTTP Status: $http_status" >> "$LOG_FILE"
-        fi
     }
     save_report 1
 }
@@ -586,7 +587,7 @@ echo -e "\n\n\n         We now have to reboot this server, after the reboot, you
 echo -e "\n         When rebooting, your SSH connection will be closed (disconnected), your VPS will take some time to restart,"
 echo -e "         wait a few minutes and you will be able to SSH into your server and log in to Mautic again."
 echo -e "\n\n\n         Press CTRL + C if you do not wish to reboot the server now, but be aware a reboot is required."
-echo -e "\n         ${ORANGE}Press ENTER when you are ready to reboot the server.${NC}"
+echo -e "\n         ${NC}Press ENTER when you are ready to reboot the server.${NC}"
 echo -e "\n\n         Enjoy!"
 echo -e "\n    <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<-----o----->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
 echo -e "\n\n"
