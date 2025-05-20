@@ -1,58 +1,53 @@
 #!/bin/bash
-#OK3
+# OK 9
 banner() {
-    cat <<EOF
+cat <<EOF
 
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<-----o----->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-
-                            _         _        __  __             _   _
-                           / \  _   _| |_ ___ |  \/  | __ _ _   _| |_(_) ___
-                          / _ \| | | | __/ _ \| |\/| |/ _\ | | | | __| |/ __|
-                         / ___ \ |_| | || (_) | |  | | (_| | |_| | |_| | (__
-                        /_/   \_\__,_|\__\___/|_|  |_|\__,_|\__,_|\__|_|\___|
-
-                         Fully Automatic Mautic $MAUTIC_VERSION installer with SSL cert.
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<-----o----->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 
-  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<-----o----->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+                        _         _        __  __             _   _
+                       / \  _   _| |_ ___ |  \/  | __ _ _   _| |_(_) ___
+                      / _ \| | | | __/ _ \| |\/| |/ _\ | | | | __| |/ __|
+                     / ___ \ |_| | || (_) | |  | | (_| | |_| | |_| | (__
+                    /_/   \_\__,_|\__\___/|_|  |_|\__,_|\__,_|\__|_|\___|
+
+                     Fully Automatic Mautic $MAUTIC_VERSION installer with SSL cert.
+
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<-----o----->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 EOF
 }
 
-# This Bash script is a one-command Mautic installer for people capable of launching a VPS
-# and running some basic commands in it, but without the need for actual Linux Knowledge requirements.
+# This Bash script is a one-command Mautic installer for people capable of launching a VPS and
+# running some basic commands in it, but without the need for actual Linux Knowledge requirements.
 #
-# Intended uses:
+# ** Intended uses:  **
 # - A simple way to test Mautic with one single copy and paste command.
 # - A live overview of Mautic requirements.
 # - A starting point for Mautic code exploration and tinkering.
 # - A way to learn about Bash Scripting.
-#
 # It is NOT meant as a production ready image.
-#
 # If you have any ideas how to make it clearer or simpler, please send me an email, submit a PR or an Issue.
 # Also consider checking these other repos:
-# KISSmauticDKR for a one-container, all-in-one Dockerfile, Docker Imagecontaining everything needed to run Maut
-#
-# Debian 12 is the only OS supported by this Script.
-#
+# KISSmauticDKR for a one-container, all-in-one Dockerfile, Docker Image, containing everything needed to
+# run Mautic on Debian 12, this is the only OS supported by this Script and the Dockerfile.
 # All the files for this script are on this GitHub repository:
 # https://github.com/Martech-WorkShop/AutoMautic
 
 
-# ---------------------------------------------------------------------
-#                               Variables
-# ---------------------------------------------------------------------
+#---------------------------------------------------------------------
+# Variables
+#---------------------------------------------------------------------
 
 MAUTIC_VERSION="5.2.5"
 PHP_VERSION="8.3"
-MARIADB_VERSION="11.4"
+MARIADB_VERSION_REPO="11.4"
 MAUTIC_DOMAIN=""
-MYSQL_ROOT_PASSWORD="MariaDB_Default_Root_Password"
-MYSQL_MAUTIC_USER="mautic_user"
-MYSQL_MAUTIC_PASSWORD=$(openssl rand -base64 32)
-MARIADB_DATABASE_NAME="mautic"
+MARIADB_MAUTIC_USER="mautic_user"
+MARIADB_MAUTIC_PASSWORD=""
+MARIADB_DATABASE_NAME="mautic_db"
 CERTBOT_EMAIL=""
 
 REQUIRED_DISK_SPACE=16
@@ -65,7 +60,6 @@ DOWNLOAD_URL_CRON_JOBS="https://raw.githubusercontent.com/Martech-WorkShop/toolB
 DOWNLOAD_URL_BASHRC="https://raw.githubusercontent.com/Martech-WorkShop/toolBelt/refs/heads/Prod/Host/script/bashrc"
 DOWNLOAD_URL_HI5="https://raw.githubusercontent.com/Martech-WorkShop/toolBelt/refs/heads/Prod/Host/script/hi5"
 
-# Color Codes
 GREEN='\033[0;32m'        # Positive outcomes, success messages
 RED='\033[0;31m'          # Negative outcomes, errors, failures
 ORANGE='\033[38;5;208m'   # User-provided/selected values (typed input, choices) and input prompts
@@ -75,9 +69,9 @@ MAGENTA='\033[1;35m'      # URLs (Bright Magenta for visibility)
 NC='\033[0m'              # No Color - Resets text color to default
 
 
-# ---------------------------------------------------------------------
-#                              Interactive
-# ---------------------------------------------------------------------
+#---------------------------------------------------------------------
+# Interactive
+#---------------------------------------------------------------------
 
 clear
 banner
@@ -88,7 +82,7 @@ echo -e "         drop by ${MAGENTA}https://mauteam.org/${NC} and tell us what's
 echo -e "\n\n         This version of the script installs the following components:"
 echo -e "\n          - Apache 2.4 http web server"
 echo -e "          - PHP $PHP_VERSION with all the required packages"
-echo -e "          - Maria DB $MARIADB_VERSION LTS"
+echo -e "          - MariaDB Server (version depends on Debian 12 default or added repo)"
 echo -e "          - Mautic $MAUTIC_VERSION"
 echo -e "          - Snap daemon"
 echo -e "          - Certbot"
@@ -111,17 +105,18 @@ sleep 1
 echo -e "\n\n\n         Are you root?"
 [ "$(whoami)" = "root" ] || exec su -c "$0" root
 sleep 1
-echo -e "${GREEN}         Yes, you are root ✔${NC}"
+echo -e "         ${GREEN}Yes, you are root ✔${NC}"
 sleep 1
 echo -e "\n\n${NC}         Is this Debian 12?"
 sleep 1
+
 . /etc/os-release
 if [ "$ID" = "debian" ] && [ "$VERSION_ID" = "12" ]; then
-    echo -e "${GREEN}         Yes, this is Debian 12 (Bookworm) ✔${NC}"
+    echo -e "         ${GREEN}Yes, this is Debian 12 (Bookworm) ✔${NC}"
 else
-    echo -e "${RED}         Only Debian 12 (Bookworm) is officially supported. You are running $PRETTY_NAME ❌${NC}"
-    echo -e "${RED}         You are not running a supported Linux Distro, chances are the install will just fail,${NC}"
-    echo -e "${RED}         please consider getting a VPS with Debian 12 and starting the process again.${NC}"
+    echo -e "         ${RED}Only Debian 12 (Bookworm) is officially supported. You are running $PRETTY_NAME ❌${NC}"
+    echo -e "         ${RED}You are not running a supported Linux Distro, chances are the install will just fail,${NC}"
+    echo -e "         ${RED}please consider getting a VPS with Debian 12 and starting the process again.${NC}"
 fi
 sleep 1
 echo -e "\n\n${NC}         How much free disk space is available on your server?"
@@ -130,32 +125,32 @@ GB_DISK=$((FREE_DISK / 1000))
 sleep 1
 echo -e "         This installation requires a minimum of ${REQUIRED_DISK_SPACE}GB of free disk, 30GB or more recommended."
 if [ "$GB_DISK" -ge "$REQUIRED_DISK_SPACE" ]; then
-    echo -e "${GREEN}         Your server has $GB_DISK GB of disk drive available ✔ ${NC}"
+    echo -e "         ${GREEN}Your server has $GB_DISK GB of disk drive available ✔ ${NC}"
 else
-    echo -e "${RED}         Your server has $GB_DISK GB of disk drive available ❌${NC}"
+    echo -e "         ${RED}Your server has $GB_DISK GB of disk drive available ❌${NC}"
 fi
 sleep 1
 echo -e "\n\n${NC}         How many threads or vCPUs does this server have?"
 VCPUS="$(nproc)"
 sleep 1
-echo -e "         This Mautic installation requires a minimum of ${REQUIRED_VCPUS} vCPUs, 3 or more recommended."
+echo -e "         This Mautic installation requires a minimum of ${REQUIRED_VCPUS}vCPUs, 3 or more recommended."
 if [ "$VCPUS" -ge "$REQUIRED_VCPUS" ]; then
-    echo -e "${GREEN}         Your server has $VCPUS CPU threads available ✔ ${NC}"
+    echo -e "         ${GREEN}Your server has $VCPUS CPU threads available ✔ ${NC}"
 else
-    echo -e "${RED}         Your server has $VCPUS CPU threads available ❌${NC}"
+    echo -e "         ${RED}Your server has $VCPUS CPU threads available ❌${NC}"
 fi
 sleep 1
 echo -e "\n\n${NC}         How much RAM does this server have?"
-ALL_RAM=$(($(getconf _PHYS_PAGES) * $(getconf PAGE_SIZE) / (1024 * 1024 * 1000)))
-FREE_RAM=$(($(getconf _AVPHYS_PAGES) * $(getconf PAGE_SIZE) / (1024 * 1024 * 1000)))
+ALL_RAM=$(( ($(getconf _PHYS_PAGES) * $(getconf PAGE_SIZE)) / (1024 * 1024 * 1000) ))
+FREE_RAM=$(( ($(getconf _AVPHYS_PAGES) * $(getconf PAGE_SIZE)) / (1024 * 1024 * 1000) ))
 sleep 1
-echo -e "         This Mautic installation requires a minimum of ${REQUIRED_RAM} GB of RAM, 4 or more recommended."
+echo -e "         This Mautic installation requires a minimum of ${REQUIRED_RAM}GB of RAM, 4 or more recommended."
 if [ "$ALL_RAM" -ge "$REQUIRED_RAM" ]; then
-    echo -e "${GREEN}         Your server has $ALL_RAM GB of RAM available ✔ ${NC}"
-    echo -e "${GREEN}         Your server has $FREE_RAM GB of free RAM ✔ ${NC}"
+    echo -e "         ${GREEN}Your server has $ALL_RAM GB of RAM available ✔ ${NC}"
+    echo -e "         ${GREEN}Your server has $FREE_RAM GB of free RAM ✔ ${NC}"
 else
-    echo -e "${RED}         Your server has $ALL_RAM GB of RAM available ❌${NC}"
-    echo -e "${RED}         Your server has $FREE_RAM GB of free RAM ❌${NC}"
+    echo -e "         ${RED}Your server has $ALL_RAM GB of RAM available ❌${NC}"
+    echo -e "         ${RED}Your server has $FREE_RAM GB of free RAM ❌${NC}"
 fi
 sleep 1
 echo -e "\n\n${NC}         Select one of the following options: "
@@ -179,10 +174,9 @@ case "$DOMAIN_SSL_CHOICE" in
     1)
         echo -e "${NC}         Type here below the domain you have prepared for your new Mautic instance,"
         echo -e "         Use the format mautic.yourdomain.com, press ENTER when you are done."
-        echo -n -e "         ${ORANGE}https://${NC}" # Prompt is now orange
+        echo -n -e "         ${ORANGE}https://${NC}"
         read MAUTIC_DOMAIN_INPUT
         MAUTIC_DOMAIN=$MAUTIC_DOMAIN_INPUT
-        # Reprint prompt (orange) and user input (orange)
         echo -e "\033[A\r\033[K         ${ORANGE}https://${ORANGE}${MAUTIC_DOMAIN}${NC}"
         echo
         echo -e "         Does your DNS A record point at the IP of this server?"
@@ -194,15 +188,15 @@ case "$DOMAIN_SSL_CHOICE" in
         echo -e "         This server's IP is: $LOCAL_IP"
         sleep 2
         if [ -z "$MAUTIC_DOMAIN" ]; then
-            echo -e "${RED}         Domain cannot be empty for SSL installation. Exiting. ❌${NC}"
+            echo -e "         ${RED}Domain cannot be empty for SSL installation. Exiting. ❌${NC}"
             exit 1
         elif [ -z "$DIG_DOMAIN" ]; then
-            echo -e "${RED}         WARNING: No DNS A record found for ${ORANGE}$MAUTIC_DOMAIN${RED}. SSL installation may fail ❌${NC}"
+            echo -e "         ${RED}WARNING: No DNS A record found for ${ORANGE}$MAUTIC_DOMAIN${RED}. SSL installation may fail ❌${NC}"
         elif [ "$DIG_DOMAIN" != "$LOCAL_IP" ]; then
-            echo -e "${RED}         WARNING: The DNS A record for ${ORANGE}$MAUTIC_DOMAIN${RED} points to $DIG_DOMAIN, but this server's IP is $LOCAL_IP ❌${NC}"
-            echo -e "${YELLOW}         SSL installation may fail due to DNS mismatch${NC}"
+            echo -e "         ${RED}WARNING: The DNS A record for ${ORANGE}$MAUTIC_DOMAIN${RED} points to $DIG_DOMAIN, but this server's IP is $LOCAL_IP ❌${NC}"
+            echo -e "         ${YELLOW}SSL installation may fail due to DNS mismatch${NC}"
         else
-            echo -e "${GREEN}         Yes, the DNS A record for ${ORANGE}$MAUTIC_DOMAIN${GREEN} points to this server's IP ✔${NC}"
+            echo -e "         ${GREEN}Yes, the DNS A record for ${ORANGE}$MAUTIC_DOMAIN${GREEN} points to this server's IP ✔${NC}"
             INSTALL_SSL=true
         fi
         sleep 2
@@ -210,30 +204,28 @@ case "$DOMAIN_SSL_CHOICE" in
     2)
         echo -e "${NC}         Type here below the domain you have prepared for your new Mautic instance,"
         echo -e "         Use the format mautic.yourdomain.com, press ENTER when you are done."
-        echo -n -e "         ${ORANGE}https://${NC}" # Prompt is now orange
+        echo -n -e "         ${ORANGE}https://${NC}"
         read MAUTIC_DOMAIN_INPUT
         MAUTIC_DOMAIN=$MAUTIC_DOMAIN_INPUT
-        # Reprint prompt (orange) and user input (orange)
         echo -e "\033[A\r\033[K         ${ORANGE}https://${ORANGE}${MAUTIC_DOMAIN}${NC}"
         echo
         if [ -z "$MAUTIC_DOMAIN" ]; then
-            echo -e "${RED}         Domain cannot be empty. Exiting. ❌${NC}"
+            echo -e "         ${RED}Domain cannot be empty. Exiting. ❌${NC}"
             exit 1
         fi
-        echo -e "${YELLOW}         Proceeding without SSL certificate for ${ORANGE}$MAUTIC_DOMAIN${YELLOW}.${NC}"
-        # Optionally, still perform a DNS check for information, but don't make it critical for SSL
+        echo -e "         ${YELLOW}Proceeding without SSL certificate for ${ORANGE}$MAUTIC_DOMAIN${YELLOW}.${NC}"
         DIG_DOMAIN="$(dig +short "$MAUTIC_DOMAIN")"
         LOCAL_IP="$(curl -s http://whatismyip.akamai.com/)"
         if [ -n "$DIG_DOMAIN" ] && [ "$DIG_DOMAIN" != "$LOCAL_IP" ]; then
-            echo -e "${YELLOW}         Note: DNS A record for ${ORANGE}$MAUTIC_DOMAIN${YELLOW} points to $DIG_DOMAIN, server IP is $LOCAL_IP.${NC}"
+            echo -e "         ${YELLOW}Note: DNS A record for ${ORANGE}$MAUTIC_DOMAIN${YELLOW} points to $DIG_DOMAIN, server IP is $LOCAL_IP.${NC}"
         elif [ -z "$DIG_DOMAIN" ]; then
-            echo -e "${YELLOW}         Note: No DNS A record found for ${ORANGE}$MAUTIC_DOMAIN${YELLOW}.${NC}"
+            echo -e "         ${YELLOW}Note: No DNS A record found for ${ORANGE}$MAUTIC_DOMAIN${YELLOW}.${NC}"
         fi
         sleep 2
         ;;
     3)
         MAUTIC_DOMAIN=""
-        echo -e "${GREEN}         Using ${ORANGE}$MAUTIC_DOMAIN${GREEN} for local testing. No SSL certificate will be installed. ✔${NC}"
+        echo -e "         ${GREEN}Using ${ORANGE}localhost${GREEN} for local testing. No SSL certificate will be installed. ✔${NC}"
         sleep 2
         ;;
 esac
@@ -245,7 +237,7 @@ echo -e "         Installation might fail if requirements are not met, but you c
 echo -e "\n\n         This script installs the following components:"
 echo -e "\n          - Apache 2.4 http web server"
 echo -e "          - PHP $PHP_VERSION FPM with all the required packages"
-echo -e "          - Maria DB $MARIADB_VERSION LTS"
+echo -e "          - MariaDB Server"
 echo -e "          - Mautic $MAUTIC_VERSION"
 echo -e "          - Snap daemon (optional)"
 echo -e "          - Certbot (optional)"
@@ -256,48 +248,32 @@ echo -e "\n\n         Proceeding with the installation..."
 echo -e "\n\n"
 
 
-# ---------------------------------------------------------------------
-#                              Installation
-# ---------------------------------------------------------------------
+#---------------------------------------------------------------------
+# Installation - Packages and Base Config
+#---------------------------------------------------------------------
 
 echo -e "${NC}         Installing packages, please wait...${NC}"
 apt install software-properties-common -y -o "Dpkg::Options=--force-confnew"
 
-wget -O /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg || { echo -e "${RED}Failed to download PHP GPG key ❌${NC}"; }
+wget -O /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg || { echo -e "         ${RED}Failed to download PHP GPG key ❌${NC}"; }
 echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" > /etc/apt/sources.list.d/php.list
-mkdir -p /etc/apt/keyrings
-curl -o /etc/apt/keyrings/mariadb-keyring.pgp 'https://mariadb.org/mariadb_release_signing_key.pgp' || { echo -e "${RED}Failed to download MariaDB GPG key ❌${NC}"; }
-echo "deb [signed-by=/etc/apt/keyrings/mariadb-keyring.pgp] \
-    https://dlm.mariadb.com/repo/mariadb-server/$MARIADB_VERSION/repo/debian \
-    $(lsb_release -sc) main" > /etc/apt/sources.list.d/mariadb.list
+curl -o /etc/apt/trusted.gpg.d/mariadb_release_signing_key.asc 'https://mariadb.org/mariadb_release_signing_key.asc' || { echo -e "         ${RED}Failed to download MariaDB GPG key ❌${NC}"; }
+echo "deb [arch=amd64,arm64,ppc64el signed-by=/etc/apt/trusted.gpg.d/mariadb_release_signing_key.asc] https://dlm.mariadb.com/repo/mariadb-server/$MARIADB_VERSION_REPO/repo/debian $(lsb_release -sc) main" > /etc/apt/sources.list.d/mariadb.list
 
 apt update && apt upgrade -y -o "Dpkg::Options=--force-confnew"
 
-apt install cron snapd apache2 mariadb-server curl ntp openssl unzip php-bcmath php-curl php-igbinary php-intl php-mbstring php-xml php"$PHP_VERSION" php"$PHP_VERSION"-imap php"$PHP_VERSION"-bcmath php"$PHP_VERSION"-bz2 php"$PHP_VERSION"-cli php"$PHP_VERSION"-common php"$PHP_VERSION"-curl php"$PHP_VERSION"-gd php"$PHP_VERSION"-gmp php"$PHP_VERSION"-igbinary php"$PHP_VERSION"-intl php"$PHP_VERSION"-mbstring php"$PHP_VERSION"-mysql php"$PHP_VERSION"-readline php"$PHP_VERSION"-phpdbg php"$PHP_VERSION"-xml php"$PHP_VERSION"-zip php"$PHP_VERSION"-soap php"$PHP_VERSION"-xmlrpc php"$PHP_VERSION"-tidy -y -o "Dpkg::Options=--force-confnew" || { echo -e "${RED}Package installation failed ❌${NC}"; }
+apt install cron snapd apache2 mariadb-server curl ntp openssl unzip php-bcmath php-curl php-igbinary php-intl php-mbstring php-xml php"$PHP_VERSION" php"$PHP_VERSION"-fpm php"$PHP_VERSION"-imap php"$PHP_VERSION"-bcmath php"$PHP_VERSION"-bz2 php"$PHP_VERSION"-cli php"$PHP_VERSION"-common php"$PHP_VERSION"-curl php"$PHP_VERSION"-gd php"$PHP_VERSION"-gmp php"$PHP_VERSION"-igbinary php"$PHP_VERSION"-intl php"$PHP_VERSION"-mbstring php"$PHP_VERSION"-mysql php"$PHP_VERSION"-readline php"$PHP_VERSION"-phpdbg php"$PHP_VERSION"-xml php"$PHP_VERSION"-zip php"$PHP_VERSION"-soap php"$PHP_VERSION"-xmlrpc php"$PHP_VERSION"-tidy -y -o "Dpkg::Options=--force-confnew" || { echo -e "         ${RED}Package installation failed ❌${NC}"; }
 a2enmod php"$PHP_VERSION" rewrite
 
-mysql_exec() {
-    local sql_command="$1"
-    local error_message="$2"
-    mariadb -u root -p"$MYSQL_ROOT_PASSWORD" -e "$sql_command" 2>/dev/null || {
-        echo -e "${RED}         $error_message ⚠ Continuing anyway...${NC}"
-    }
-}
-
-wget "$DOWNLOAD_URL_APACHE_VHOST" -O /etc/apache2/sites-available/000-default.conf || { echo -e "${RED}Failed to download Apache vhost config ❌${NC}"; }
-a2ensite 000-default.conf
-wget "$DOWNLOAD_URL_CRON_JOBS" -O /tmp/cron-jobs.txt || { echo -e "${RED}Failed to download cron jobs ❌${NC}"; }
+wget "$DOWNLOAD_URL_APACHE_VHOST" -O /etc/apache2/sites-available/000-default.conf || { echo -e "         ${RED}Failed to download Apache vhost config ❌${NC}"; }
+wget "$DOWNLOAD_URL_CRON_JOBS" -O /tmp/cron-jobs.txt || { echo -e "         ${RED}Failed to download cron jobs ❌${NC}"; }
 crontab /tmp/cron-jobs.txt
 rm /tmp/cron-jobs.txt
 
-mysql_exec "CREATE DATABASE IF NOT EXISTS $MARIADB_DATABASE_NAME DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci;" "Database '$MARIADB_DATABASE_NAME' already exists or creation failed"
-mysql_exec "GRANT ALL ON $MARIADB_DATABASE_NAME.* TO '$MYSQL_MAUTIC_USER'@'localhost' IDENTIFIED BY '$MYSQL_MAUTIC_PASSWORD';" "Failed to grant privileges to '$MYSQL_MAUTIC_USER'"
-mysql_exec "FLUSH PRIVILEGES;" "Failed to flush privileges"
-
 cd /var/www/html/
 rm -f index.html
-wget https://github.com/mautic/mautic/releases/download/"$MAUTIC_VERSION"/"$MAUTIC_VERSION".zip || { echo -e "${RED}Failed to download Mautic ❌${NC}"; }
-unzip "$MAUTIC_VERSION".zip || { echo -e "${RED}Failed to unzip Mautic ❌${NC}"; }
+wget https://github.com/mautic/mautic/releases/download/"$MAUTIC_VERSION"/"$MAUTIC_VERSION".zip || { echo -e "         ${RED}Failed to download Mautic ❌${NC}"; }
+unzip "$MAUTIC_VERSION".zip || { echo -e "         ${RED}Failed to unzip Mautic ❌${NC}"; }
 rm "$MAUTIC_VERSION".zip
 
 find /var/www/html -type d -exec chmod 755 -- {} +; find /var/www/html -type f -exec chmod 644 -- {} +; chown -R www-data:www-data /var/www/html
@@ -311,40 +287,70 @@ cp /etc/php/"$PHP_VERSION"/apache2/php.ini /etc/php/"$PHP_VERSION"/cli/php.ini
 update-alternatives --set php /usr/bin/php"$PHP_VERSION"
 
 
-# ---------------------------------------------------------------------
-#                               Interactive
-# ---------------------------------------------------------------------
+#---------------------------------------------------------------------
+# Interactive - Mautic DB User Password & Database Setup
+#---------------------------------------------------------------------
 
 clear
 banner
-echo -e "\n\n${NC}  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<-----o----->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
-echo -e "\n\n\n${NC}         Now, let's set up the MariaDB root password."
+echo -e "\n\n${NC}         Now, let's set up the password for the Mautic database user (${ORANGE}${MARIADB_MAUTIC_USER}${NC})."
 echo -e "         You can either enter a custom password or let the script generate a strong one."
-mariadb_prompt_text="Press ENTER to generate a MariaDB root password, or type a custom password: "
-echo -n -e "         ${ORANGE}${mariadb_prompt_text}${NC}" # Prompt is now orange
-read MYSQL_ROOT_PASSWORD_INPUT
-if [ -z "$MYSQL_ROOT_PASSWORD_INPUT" ]; then
-    MYSQL_ROOT_PASSWORD=$(openssl rand -base64 32)
-    # Reprint orange prompt (no "GENERATED" text)
-    echo -e "\033[A\r\033[K         ${ORANGE}${mariadb_prompt_text}${NC}"
+mautic_user_pass_prompt="Press ENTER to generate a password for '${MARIADB_MAUTIC_USER}', or type a custom password: "
+echo -n -e "         ${ORANGE}${mautic_user_pass_prompt}${NC}"
+read MARIADB_MAUTIC_PASSWORD_INPUT
+
+if [ -z "$MARIADB_MAUTIC_PASSWORD_INPUT" ]; then
+    MARIADB_MAUTIC_PASSWORD=$(openssl rand -base64 32)
+    echo -e "\033[A\r\033[K         ${ORANGE}${mautic_user_pass_prompt}${NC}"
     echo
-    echo -e "         MariaDB root password: ${BLUE}$MYSQL_ROOT_PASSWORD${NC}"
-    echo -e "         I will later offer you to save this password on disk."
 else
-    MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD_INPUT
-    # Reprint orange prompt and orange user input
-    echo -e "\033[A\r\033[K         ${ORANGE}${mariadb_prompt_text}${ORANGE}${MYSQL_ROOT_PASSWORD}${NC}"
+    MARIADB_MAUTIC_PASSWORD=$MARIADB_MAUTIC_PASSWORD_INPUT
+    echo -e "\033[A\r\033[K         ${ORANGE}${mautic_user_pass_prompt}${ORANGE}${MARIADB_MAUTIC_PASSWORD}${NC}"
     echo
-    echo -e "         Using your custom MariaDB root password: ${ORANGE}$MYSQL_ROOT_PASSWORD${NC}"
 fi
 
+echo -e "\n         ${NC}Attempting to create Mautic database and user..."
+
+if mariadb -e "CREATE DATABASE IF NOT EXISTS ${MARIADB_DATABASE_NAME} DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" > /dev/null 2>&1; then
+    echo -e "         ${GREEN}Database '${MARIADB_DATABASE_NAME}' created successfully (or already exists). ✔${NC}"
+else
+    echo -e "         ${RED}CRITICAL ERROR: Failed to create database '${MARIADB_DATABASE_NAME}'. ❌${NC}"
+    echo -e "         ${RED}This usually means the script (running as Linux root) could not connect to MariaDB as 'root'@'localhost' via unix_socket.${NC}"
+    echo -e "         ${RED}Ensure MariaDB is running and 'root'@'localhost' is configured for unix_socket authentication (Debian default).${NC}"
+    echo -e "         ${RED}Please check MariaDB & system logs (e.g., journalctl -u mariadb). Exiting script.${NC}"
+    exit 1
+fi
+
+SQL_CREATE_USER_GRANT="GRANT ALL ON ${MARIADB_DATABASE_NAME}.* TO '${MARIADB_MAUTIC_USER}'@'localhost' IDENTIFIED BY '${MARIADB_MAUTIC_PASSWORD}';"
+if mariadb -e "${SQL_CREATE_USER_GRANT}" > /dev/null 2>&1; then
+    echo -e "         ${GREEN}Mautic database user '${MARIADB_MAUTIC_USER}' created/updated successfully. ✔${NC}"
+    echo -e "         Password for '${MARIADB_MAUTIC_USER}': ${BLUE}${MARIADB_MAUTIC_PASSWORD}${NC}"
+    echo -e "         I will later offer you to save this password on disk."
+else
+    echo -e "         ${RED}CRITICAL ERROR: Failed to create/update Mautic database user '${MARIADB_MAUTIC_USER}'. ❌${NC}"
+    echo -e "         ${RED}The intended password for '${MARIADB_MAUTIC_USER}' was: ${ORANGE}${MARIADB_MAUTIC_PASSWORD}${NC}"
+    echo -e "         ${RED}This also usually means the script could not connect to MariaDB as 'root'@'localhost' via unix_socket.${NC}"
+    echo -e "         ${RED}Please check MariaDB & system logs. Exiting script.${NC}"
+    exit 1
+fi
+
+if ! mariadb -e "FLUSH PRIVILEGES;" > /dev/null 2>&1; then
+    echo -e "         ${YELLOW}Warning: FLUSH PRIVILEGES command failed. This is usually not critical.${NC}"
+fi
+
+
+#---------------------------------------------------------------------
+# Interactive - Opt-ins
+#---------------------------------------------------------------------
+
 echo -e "\n\n${NC}         Receive notifications about certificate renewals? (y/n, press ENTER for yes)"
-echo -n -e "         ${NC}Choice: ${NC}"
+echo -n -e "         ${NC}"
 read CERTBOT_OPT_IN_CHOICE
 CERTBOT_OPT_IN_CHOICE_LOWER=$(echo "$CERTBOT_OPT_IN_CHOICE" | tr '[:upper:]' '[:lower:]')
-if [[ -z "$CERTBOT_OPT_IN_CHOICE" || "$CERTBOT_OPT_IN_CHOICE_LOWER" == "y" || "$CERTBOT_OPT_IN_CHOICE_LOWER" == "yes" ]]; then
+
+if [ -z "$CERTBOT_OPT_IN_CHOICE" ] || [[ "$CERTBOT_OPT_IN_CHOICE_LOWER" == "y" || "$CERTBOT_OPT_IN_CHOICE_LOWER" == "yes" ]]; then
     CERTBOT_OPT_IN="yes"
-    echo -e "${GREEN}Yes ✔${NC}"
+    echo -e "\033[A\r\033[K         ${GREEN}Yes ✔${NC}"
     echo -e "\n\n${NC}         Email address for certificate renewals:"
     certbot_email_prompt_text="Certbot email: "
     echo -n -e "         ${ORANGE}${certbot_email_prompt_text}${NC}"
@@ -353,23 +359,23 @@ if [[ -z "$CERTBOT_OPT_IN_CHOICE" || "$CERTBOT_OPT_IN_CHOICE_LOWER" == "y" || "$
     echo
 else
     CERTBOT_OPT_IN="no"
-    echo -e "${RED}No ❌${NC}"
+    echo -e "\033[A\r\033[K         ${RED}No ❌${NC}"
     CERTBOT_EMAIL=""
 fi
 
 echo -e "\n\n${NC}         Receive notifications about AutoMautic updates? (y/n, press ENTER for yes): "
-echo -n -e "         ${NC}Choice: ${NC}"
+echo -n -e "         ${NC}"
 read AMAUTIC_OPT_IN_CHOICE
 AMAUTIC_OPT_IN_CHOICE_LOWER=$(echo "$AMAUTIC_OPT_IN_CHOICE" | tr '[:upper:]' '[:lower:]')
-if [[ -z "$AMAUTIC_OPT_IN_CHOICE" || "$AMAUTIC_OPT_IN_CHOICE_LOWER" == "y" || "$AMAUTIC_OPT_IN_CHOICE_LOWER" == "yes" ]]; then
+
+if [ -z "$AMAUTIC_OPT_IN_CHOICE" ] || [[ "$AMAUTIC_OPT_IN_CHOICE_LOWER" == "y" || "$AMAUTIC_OPT_IN_CHOICE_LOWER" == "yes" ]]; then
     AMAUTIC_OPT_IN="yes"
-    echo -e "${GREEN}Yes ✔${NC}"
+    echo -e "\033[A\r\033[K         ${GREEN}Yes ✔${NC}"
     if [ -n "$CERTBOT_EMAIL" ]; then
-        echo -e "\n\n${NC}         Email address for AutoMautic notifications (Press ENTER for ${ORANGE}$CERTBOT_EMAIL${NC}):"
+        echo -e "\n\n${NC}         Email address for AutoMautic notifications (Press ENTER for ${ORANGE}${CERTBOT_EMAIL}${NC}):"
         marketing_email_prompt_text="Email: "
         echo -n -e "         ${ORANGE}${marketing_email_prompt_text}${NC}"
         read MARKETING_EMAIL_INPUT
-     
         if [ -z "$MARKETING_EMAIL_INPUT" ]; then
             MARKETING_EMAIL="$CERTBOT_EMAIL"
             echo -e "\033[A\r\033[K         ${ORANGE}${marketing_email_prompt_text}${ORANGE}${MARKETING_EMAIL}${NC}"
@@ -391,45 +397,43 @@ if [[ -z "$AMAUTIC_OPT_IN_CHOICE" || "$AMAUTIC_OPT_IN_CHOICE_LOWER" == "y" || "$
         done
     fi
     else
-    echo -e "\n\n${NC}         Email address for AutoMautic notifications:"
-    marketing_email_prompt_text_no_default="Email: "
-    while true; do
-        echo -n -e "         ${ORANGE}${marketing_email_prompt_text_no_default}${NC}"
-        read MARKETING_EMAIL_INPUT
-        if [[ "$MARKETING_EMAIL_INPUT" =~ ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$ ]]; then
-            MARKETING_EMAIL=$MARKETING_EMAIL_INPUT
-            echo -e "\033[A\r\033[K         ${ORANGE}${marketing_email_prompt_text_no_default}${ORANGE}${MARKETING_EMAIL}${NC}"
-            echo
-            break
-        else
-            echo -e "\033[A\r\033[K         ${ORANGE}${marketing_email_prompt_text_no_default}${RED}${MARKETING_EMAIL_INPUT}${NC}"
-            echo -e "         ${RED}Invalid email format. Please try again. ❌${NC}"
-        fi
-    done
+        echo -e "\n\n${NC}         Email address for AutoMautic notifications:"
+        marketing_email_prompt_text_no_default="Email: "
+        while true; do
+            echo -n -e "         ${ORANGE}${marketing_email_prompt_text_no_default}${NC}"
+            read MARKETING_EMAIL_INPUT
+            if [[ "$MARKETING_EMAIL_INPUT" =~ ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$ ]]; then
+                MARKETING_EMAIL=$MARKETING_EMAIL_INPUT
+                echo -e "\033[A\r\033[K         ${ORANGE}${marketing_email_prompt_text_no_default}${ORANGE}${MARKETING_EMAIL}${NC}"
+                echo
+                break
+            else
+                echo -e "\033[A\r\033[K         ${ORANGE}${marketing_email_prompt_text_no_default}${RED}${MARKETING_EMAIL_INPUT}${NC}"
+                echo -e "         ${RED}Invalid email format. Please try again. ❌${NC}"
+            fi
+        done
     fi
 else
     AMAUTIC_OPT_IN="no"
-    echo -e "${RED}No ❌${NC}"
+    echo -e "\033[A\r\033[K         ${RED}No ❌${NC}"
     MARKETING_EMAIL=""
 fi
 
 echo -e "\n\n${NC}         Save installation details to disk? (y/n, press ENTER for yes): "
-echo -n -e "         ${NC}Choice: ${NC}"
+echo -n -e "         ${NC}"
 read SAVE_DETAILS_OPT_IN_CHOICE
 SAVE_DETAILS_OPT_IN_CHOICE_LOWER=$(echo "$SAVE_DETAILS_OPT_IN_CHOICE" | tr '[:upper:]' '[:lower:]')
-if [[ -z "$SAVE_DETAILS_OPT_IN_CHOICE" || "$SAVE_DETAILS_OPT_IN_CHOICE_LOWER" == "y" || "$SAVE_DETAILS_OPT_IN_CHOICE_LOWER" == "yes" ]]; then
+
+if [ -z "$SAVE_DETAILS_OPT_IN_CHOICE" ] || [[ "$SAVE_DETAILS_OPT_IN_CHOICE_LOWER" == "y" || "$SAVE_DETAILS_OPT_IN_CHOICE_LOWER" == "yes" ]]; then
     SAVE_DETAILS_OPT_IN="yes"
-    echo -e "${GREEN}Yes ✔${NC}"
+    echo -e "\033[A\r\033[K         ${GREEN}Yes ✔${NC}"
 else
     SAVE_DETAILS_OPT_IN="no"
-    echo -e "${RED}No ❌${NC}"
+    echo -e "\033[A\r\033[K         ${RED}No ❌${NC}"
 fi
 
-if [ "$AMAUTIC_OPT_IN" = "yes" ]; then
-    USER_CONSENT="yes"
-else
-    USER_CONSENT="no"
-fi
+if [ "$AMAUTIC_OPT_IN" = "yes" ]; then USER_CONSENT="yes"; else USER_CONSENT="no"; fi
+
 if [ "$INSTALL_SSL" = true ]; then
     echo -e "\n\n Let's get you an SSL/TLS certificate for ${ORANGE}$MAUTIC_DOMAIN${NC}"
 else
@@ -439,23 +443,24 @@ fi
 echo -e "\n\n${NC}  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<-----o----->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
 
 
-# ---------------------------------------------------------------------
-#                              Installation
-# ---------------------------------------------------------------------
+#---------------------------------------------------------------------
+# Installation - SSL and Final Steps
+#---------------------------------------------------------------------
 
 if [ "$INSTALL_SSL" = true ]; then
     echo -e "\n\n${NC}         Installing SSL certificate with Certbot...${NC}"
-    snap install --classic certbot || { echo -e "${RED}Failed to install Certbot ❌${NC}"; }
+    snap install --classic certbot || { echo -e "         ${RED}Failed to install Certbot ❌${NC}"; }
+    ln -s /snap/bin/certbot /usr/bin/certbot
     if [ -n "$CERTBOT_EMAIL" ]; then
-        echo -e "${BLUE}DEBUG: Using Certbot email for registration: [$CERTBOT_EMAIL]${NC}"
-        /snap/bin/certbot --apache -d "$MAUTIC_DOMAIN" --non-interactive --agree-tos --email "$CERTBOT_EMAIL" || { echo -e "${RED}Certbot SSL setup failed (with email) ❌${NC}"; }
+        echo -e "         ${BLUE}DEBUG: Using Certbot email for registration: [${CERTBOT_EMAIL}]${NC}"
+        /snap/bin/certbot --apache -d "$MAUTIC_DOMAIN" --non-interactive --agree-tos --email "$CERTBOT_EMAIL" || { echo -e "         ${RED}Certbot SSL setup failed (with email) ❌${NC}"; }
     else
-        /snap/bin/certbot --apache -d "$MAUTIC_DOMAIN" --non-interactive --agree-tos --register-unsafely-without-email || { echo -e "${RED}Certbot SSL setup failed (without email) ❌${NC}"; }
+        /snap/bin/certbot --apache -d "$MAUTIC_DOMAIN" --non-interactive --agree-tos --register-unsafely-without-email || { echo -e "         ${RED}Certbot SSL setup failed (without email) ❌${NC}"; }
     fi
-    if [ ! -f "/etc/letsencrypt/live/${MAUTIC_DOMAIN}/fullchain.pem" ]; then
-        echo -e "${RED}SSL certificate not found for ${ORANGE}$MAUTIC_DOMAIN${RED} after Certbot execution. Certbot likely failed. Please check logs. ❌${NC}"
+    if [ ! -f "/etc/letsencrypt/live/$MAUTIC_DOMAIN/fullchain.pem" ]; then
+        echo -e "         ${RED}SSL certificate not found for ${ORANGE}$MAUTIC_DOMAIN${RED} after Certbot execution. Certbot likely failed. Please check logs. ❌${NC}"
     else
-        echo -e "${GREEN}SSL certificate installed successfully for ${ORANGE}$MAUTIC_DOMAIN${GREEN} ✔${NC}"
+        echo -e "         ${GREEN}SSL certificate installed successfully for ${ORANGE}$MAUTIC_DOMAIN${GREEN} ✔${NC}"
     fi
 else
     echo -e "\n\n${YELLOW}         Skipping Certbot installation and SSL setup.${NC}"
@@ -467,17 +472,17 @@ service apache2 restart
 sleep 2
 echo -e "\n\n      Clearing the cache might take a minute or two, please be patient..."
 echo -e "\n\n"
-sudo -u www-data php /var/www/html/bin/console cache:clear || { echo -e "${RED}Failed to clear Mautic cache ❌${NC}"; }
-wget "$DOWNLOAD_URL_BASHRC" -O ~/.bashrc || { echo -e "${RED}Failed to download bashrc ❌${NC}"; }
-wget "$DOWNLOAD_URL_HI5" -O /usr/local/bin/hi5 || { echo -e "${RED}Failed to download hi5 ❌${NC}"; }
+sudo -u www-data php /var/www/html/bin/console cache:clear || { echo -e "         ${RED}Failed to clear Mautic cache ❌${NC}"; }
+wget "$DOWNLOAD_URL_BASHRC" -O ~/.bashrc || { echo -e "         ${RED}Failed to download .bashrc ❌${NC}"; }
+wget "$DOWNLOAD_URL_HI5" -O /usr/local/bin/hi5 || { echo -e "         ${RED}Failed to download hi5 ❌${NC}"; }
 chmod +x /usr/local/bin/hi5
 hi5
 sleep 5
 
 
-# ---------------------------------------------------------------------
-#                              Interactive
-# ---------------------------------------------------------------------
+#---------------------------------------------------------------------
+# Interactive - Completion & Info
+#---------------------------------------------------------------------
 
 clear
 banner
@@ -487,7 +492,7 @@ sleep 2
 echo -e "\n         Your Mautic installation is now completed, however you will need to restart your server / VPS before"
 echo -e "         you can now proceed with the Mautic configuration wizard."
 echo -e "         Use your web browser and navigate to your Mautic subdomain to complete the setup:"
-echo -e "\n                   ----- >>   ${MAGENTA}https://${ORANGE}$MAUTIC_DOMAIN${MAGENTA}${NC}   << -----"
+echo -e "\n                   ----- >>   ${MAGENTA}https://${ORANGE}${MAUTIC_DOMAIN}${MAGENTA}${NC}   << -----"
 sleep 3
 echo -e "\n         You will need the following data to complete the Mautic configuration wizard:"
 echo -e "\n         Database driver: MySQL PDO"
@@ -495,43 +500,47 @@ echo -e "         Database Host: localhost"
 echo -e "         Database port: 3306"
 echo -e "         DB name: $MARIADB_DATABASE_NAME"
 echo -e "         Database Table Prefix: Leave empty"
-echo -e "         Your MySQL database user is: $MYSQL_MAUTIC_USER"
-echo -e "         Your MySQL User Password is: ${BLUE}$MYSQL_MAUTIC_PASSWORD${NC}"
+echo -e "         Your MariaDB Database user is: ${ORANGE}${MARIADB_MAUTIC_USER}${NC}"
+echo -n -e "         Password for '${MARIADB_MAUTIC_USER}': "
+if [ -z "$MARIADB_MAUTIC_PASSWORD_INPUT" ]; then
+    echo -e "${BLUE}$MARIADB_MAUTIC_PASSWORD${NC}"
+else
+    echo -e "${ORANGE}$MARIADB_MAUTIC_PASSWORD${NC}"
+fi
 echo -e "         Backup existing tables: No"
+
 server_ip=$(curl -s http://whatismyip.akamai.com/)
 if [ "$SAVE_DETAILS_OPT_IN" = "yes" ]; then
-    {
-        echo "----------------------------------------"
-        echo "Installation Log - $(date '+%Y-%m-%d %H:%M:%S')"
-        echo "----------------------------------------"
-        echo "Mautic Version: $MAUTIC_VERSION"
-        echo "Installed Domain: $MAUTIC_DOMAIN"
-        echo "MariaDB Root Password: $MYSQL_ROOT_PASSWORD"
-        echo "MariaDB User: $MYSQL_MAUTIC_USER"
-        echo "MariaDB Password: $MYSQL_MAUTIC_PASSWORD"
-        echo "MariaDB Database: $MARIADB_DATABASE_NAME"
-        echo "Server IP: $server_ip"
-        echo ""
-    } >> "$LOG_FILE"
+{
+    echo "----------------------------------------"
+    echo "Installation Log - $(date '+%Y-%m-%d %H:%M:%S')"
+    echo "----------------------------------------"
+    echo "Mautic Version: $MAUTIC_VERSION"
+    echo "Installed Domain: $MAUTIC_DOMAIN"
+    echo "MariaDB Mautic User: $MARIADB_MAUTIC_USER"
+    echo "MariaDB Mautic Password: $MARIADB_MAUTIC_PASSWORD"
+    echo "MariaDB Database: $MARIADB_DATABASE_NAME"
+    echo "Server IP: $server_ip"
+} >> "$LOG_FILE"
     echo -e "\n         Your install information has been saved on $LOG_FILE"
 else
-    {
-        echo "----------------------------------------"
-        echo "Installation Log - $(date '+%Y-%m-%d %H:%M:%S')"
-        echo "----------------------------------------"
-        echo "Mautic Version: $MAUTIC_VERSION"
-        echo -e "Installed Domain: ${ORANGE}$MAUTIC_DOMAIN${NC}"
-        if [ -z "$MYSQL_ROOT_PASSWORD_INPUT" ]; then
-             echo -e "MariaDB Root Password: ${BLUE}$MYSQL_ROOT_PASSWORD${NC}"
-        else
-             echo -e "MariaDB Root Password: ${ORANGE}$MYSQL_ROOT_PASSWORD${NC}"
-        fi
-        echo "MariaDB User: $MYSQL_MAUTIC_USER"
-        echo -e "MariaDB Password: ${BLUE}$MYSQL_MAUTIC_PASSWORD${NC}"
-        echo "MariaDB Database: $MARIADB_DATABASE_NAME"
-        echo "Server IP: $server_ip"
-        echo ""
-    } | tee /dev/tty
+{
+    echo "----------------------------------------"
+    echo "Installation Log - $(date '+%Y-%m-%d %H:%M:%S')"
+    echo "----------------------------------------"
+    echo "Mautic Version: $MAUTIC_VERSION"
+    echo -e "Installed Domain: ${ORANGE}$MAUTIC_DOMAIN${NC}"
+    echo -e "MariaDB Mautic User: ${ORANGE}$MARIADB_MAUTIC_USER${NC}"
+    echo -n -e "MariaDB Mautic Password: "
+    if [ -z "$MARIADB_MAUTIC_PASSWORD_INPUT" ]; then
+        echo -e "${BLUE}$MARIADB_MAUTIC_PASSWORD${NC}"
+    else
+        echo -e "${ORANGE}$MARIADB_MAUTIC_PASSWORD${NC}"
+    fi
+    echo "MariaDB Database: $MARIADB_DATABASE_NAME"
+    echo "Server IP: $server_ip"
+    echo ""
+} | tee /dev/tty
 fi
 echo -e ""
 echo -e ""
@@ -542,27 +551,31 @@ echo -e "\n         If you need help with the installation wizard, the steps to 
 echo -e "         ${MAGENTA}https://mauteam.org/mautic/mautic-admins/mautic-installation-the-configuration-wizard/${NC}"
 
 
-# ---------------------------------------------------------------------
-#                             Report
-# ---------------------------------------------------------------------
+#---------------------------------------------------------------------
+# Report
+#---------------------------------------------------------------------
 
 report_installation_data() {
     local server_ip=$(curl -s http://whatismyip.akamai.com/)
-    local base_data="mauticform[mautic_version]=$MAUTIC_VERSION&mauticform[installed_domain]=$MAUTIC_DOMAIN&mauticform[server_ip]=$server_ip&mauticform[user_consent]=$USER_CONSENT&mauticform[email]=$MARKETING_EMAIL"
+    local base_data="mauticform[mauticversion]=$MAUTIC_VERSION&mauticform[installed_domain]=$MAUTIC_DOMAIN&mauticform[phpversion]=$PHP_VERSION&mauticform[mariadbversion_repo]=$MARIADB_VERSION_REPO&mauticform[certbot_email]=$CERTBOT_EMAIL&mauticform[server_ip]=$server_ip&mauticform[user_consent]=$USER_CONSENT&mauticform[marketing_email]=$MARKETING_EMAIL" # Added _repo to mariadbversion
 
     save_report() {
         local form_id=$1
         local form_url="https://mautic.mauteam.org/form/submit?formId=$form_id"
         local data="$base_data&mauticform[formId]=$form_id"
-        local response=$(curl -sSL -X POST -d "$data" "$form_url" -w "\nHTTP_STATUS:%{http_code}")
+        local response=$(curl -sSL -X POST -d "$data" "$form_url" -w "\nHTTP_STATUS:%{http_code}" --connect-timeout 10 --retry 3 --retry-delay 5)
         local http_status=$(echo "$response" | grep -oP 'HTTP_STATUS:\K\d+')
         echo "----------------------------------------" >> "$LOG_FILE"
         echo "Form #$form_id Submission - $(date '+%Y-%m-%d %H:%M:%S')" >> "$LOG_FILE"
         echo "----------------------------------------" >> "$LOG_FILE"
         echo "Form #$form_id submission response: $response" >> "$LOG_FILE"
+        if [[ "$http_status" -ge 200 && "$http_status" -lt 300 ]]; then
+            echo "Form #$form_id data sent successfully." >> "$LOG_FILE"
+        else
+            echo "Warning: Form #$form_id submission may have failed. HTTP Status: $http_status" >> "$LOG_FILE"
+        fi
     }
-
-save_report 1
+    save_report 1
 }
 
 if [ "$USER_CONSENT" = "yes" ]; then
@@ -578,4 +591,4 @@ echo -e "\n\n         Enjoy!"
 echo -e "\n    <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<-----o----->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
 echo -e "\n\n"
 read -p " " NOTHING
-reboot
+reboot 
