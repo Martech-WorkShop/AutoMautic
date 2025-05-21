@@ -1,5 +1,4 @@
 #!/bin/bash
-# OK 11
 banner() {
 cat <<EOF
 
@@ -63,7 +62,7 @@ REQUIRED_VCPUS=2
 REQUIRED_RAM=3
 LOG_FILE="$(pwd)/AutoMautic_install.log"
 
-DOWNLOAD_URL_APACHE_VHOST="https://raw.githubusercontent.com/Martech-WorkShop/toolBelt/Prod/Mautic/conf/apache/000-default.conf"
+DOWNLOAD_URL_APACHE_VHOST="https://raw.githubusercontent.com/Martech-WorkShop/toolBelt/Prod/Mautic/conf/apache/000-default-fpm-8.3.conf"
 DOWNLOAD_URL_CRON_JOBS="https://raw.githubusercontent.com/Martech-WorkShop/toolBelt/Prod/Mautic/conf/cron/cronjobs"
 DOWNLOAD_URL_BASHRC="https://raw.githubusercontent.com/Martech-WorkShop/toolBelt/refs/heads/Prod/Host/script/bashrc"
 DOWNLOAD_URL_HI5="https://raw.githubusercontent.com/Martech-WorkShop/toolBelt/refs/heads/Prod/Host/script/hi5"
@@ -567,8 +566,7 @@ echo -e "         ${MAGENTA}https://mauteam.org/mautic/mautic-admins/mautic-inst
 
 report_installation_data() {
     local server_ip=$(curl -s http://whatismyip.akamai.com/)
-    local base_data="mauticform[mauticversion]=$MAUTIC_VERSION&mauticform[installed_domain]=$MAUTIC_DOMAIN&mauticform[phpversion]=$PHP_VERSION&mauticform[mariadbversion_repo]=$MARIADB_VERSION_REPO&mauticform[certbot_email]=$CERTBOT_EMAIL&mauticform[server_ip]=$server_ip&mauticform[user_consent]=$USER_CONSENT&mauticform[marketing_email]=$MARKETING_EMAIL" # Added _repo to mariadbversion
-
+    local base_data="mauticform[mautic_version]=$MAUTIC_VERSION&mauticform[installed_domain]=$MAUTIC_DOMAIN&mauticform[server_ip]=$server_ip&mauticform[user_consent]=$USER_CONSENT&mauticform[email]=$MARKETING_EMAIL"
     save_report() {
         local form_id=$1
         local form_url="https://mautic.mauteam.org/form/submit?formId=$form_id"
